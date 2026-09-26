@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import AsyncIterator
 
 from sqlalchemy import Select, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,6 +39,20 @@ class PostRepository:
         if status is not None:
             query = query.where(Post.status == status)
         return await paginate(self.session, query, params, Post.updated_at.desc(), Post.id)
+
+    async def stream_by_author(
+        self, author_id: uuid.UUID, status: PostStatus | None = None, batch_size: int = 500
+    ) -> AsyncIterator[Post]:
+        """All of an author's posts, oldest first, fetched from the database in batches.
+
+        Unlike a list, this never holds every post in memory at once.
+        """
+        query = _visible().where(Post.author_id == author_id).order_by(Post.created_at, Post.id)
+        if status is not None:
+            query = query.where(Post.status == status)
+        result = await self.session.stream_scalars(query.execution_options(yield_per=batch_size))
+        async for post in result:
+            yield post
 
     async def add(self, post: Post) -> Post:
         self.session.add(post)
