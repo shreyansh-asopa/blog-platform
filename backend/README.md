@@ -26,6 +26,25 @@ uv sync                          # install dependencies into .venv
 uv run uvicorn app.main:app --reload
 ```
 
+## Endpoints so far
+
+| Method | Path | Auth | What it does |
+|---|---|---|---|
+| GET | `/health` | — | Process is up |
+| GET | `/ready` | — | Database is reachable |
+| POST | `/api/v1/auth/register` | — | Create an account (JSON: `email`, `username`, `password`) |
+| POST | `/api/v1/auth/login` | — | Get a token (form: `username` = username or email, `password`) |
+| GET | `/api/v1/users/me` | Bearer token | The logged-in user |
+
+Try it in the browser at `/docs`: register, then click **Authorize**, log in, and call `/users/me`.
+
+```sh
+curl -X POST localhost:8000/api/v1/auth/login -d 'username=ada&password=...'
+curl localhost:8000/api/v1/users/me -H "Authorization: Bearer <access_token>"
+```
+
+Errors share one shape: `{"error": {"code": "conflict", "message": "Email is already registered"}}`.
+
 ## Database migrations
 
 Schema changes go through Alembic, never by hand. The Docker container runs
