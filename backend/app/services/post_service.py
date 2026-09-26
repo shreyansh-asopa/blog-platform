@@ -7,8 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError, PermissionDeniedError
 from app.core.text import make_excerpt, slugify
-from app.models import Post, PostStatus, User
+from app.models import AuditAction, Post, PostStatus, User
 from app.permissions import Permission, has_permission
+from app.repositories.audit_log_repository import AuditLogRepository
 from app.repositories.post_repository import PostRepository
 from app.schemas.pagination import PageParams
 from app.schemas.post import PostCreate, PostUpdate
@@ -22,6 +23,7 @@ class PostService:
     def __init__(self, session: AsyncSession):
         self.session = session
         self.posts = PostRepository(session)
+        self.audit = AuditLogRepository(session)
 
     # --- Reading ---
 
@@ -75,25 +77,43 @@ class PostService:
         if "excerpt" in changes:
             post.excerpt = changes["excerpt"] or make_excerpt(post.content)
 
+        self._audit_if_not_author(user, AuditAction.POST_UPDATED, post, fields=sorted(changes))
         return await self._save(post)
 
     async def publish(self, user: User, post_id: uuid.UUID) -> Post:
         post = await self._get_managed(user, post_id)
         post.status = PostStatus.PUBLISHED
         post.published_at = post.published_at or datetime.now(UTC)
+        self._audit_if_not_author(user, AuditAction.POST_PUBLISHED, post)
         return await self._save(post)
 
     async def unpublish(self, user: User, post_id: uuid.UUID) -> Post:
         post = await self._get_managed(user, post_id)
         post.status = PostStatus.DRAFT
+        self._audit_if_not_author(user, AuditAction.POST_UNPUBLISHED, post)
         return await self._save(post)
 
     async def delete(self, user: User, post_id: uuid.UUID) -> None:
         post = await self._get_managed(user, post_id)
         post.deleted_at = datetime.now(UTC)
+        # Every delete is recorded, so a post can be found and restored later
+        self.audit.record(
+            user,
+            AuditAction.POST_DELETED,
+            "post",
+            post.id,
+            {"title": post.title, "author_id": str(post.author_id)},
+        )
         await self.session.commit()
 
     # --- Helpers ---
+
+    def _audit_if_not_author(self, user: User, action: AuditAction, post: Post, **details) -> None:
+        # Authors editing their own posts is everyday use; an admin changing
+        # someone else's post is worth a record
+        if user.id != post.author_id:
+            details["author_id"] = str(post.author_id)
+            self.audit.record(user, action, "post", post.id, details)
 
     async def _get_managed(self, user: User, post_id: uuid.UUID) -> Post:
         post = await self.posts.get_by_id(post_id)

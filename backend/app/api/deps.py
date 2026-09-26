@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable, Coroutine
 from typing import Annotated
 
 import jwt
@@ -7,10 +7,11 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
-from app.core.exceptions import AuthenticationError
+from app.core.exceptions import AuthenticationError, PermissionDeniedError
 from app.core.security import decode_access_token
 from app.integrations.moderation import Moderator
 from app.models import User
+from app.permissions import Permission, has_permission
 from app.repositories.user_repository import UserRepository
 from app.schemas.pagination import PageParams
 
@@ -53,6 +54,24 @@ async def get_current_user(user: Annotated[User | None, Depends(get_optional_use
     if user is None:
         raise AuthenticationError("Not authenticated")
     return user
+
+
+def require_permission(
+    permission: Permission,
+) -> Callable[[User], Coroutine[None, None, User]]:
+    """A dependency that lets a request through only if the user has `permission`.
+
+    Usage: admin: Annotated[User, Depends(require_permission(Permission.MANAGE_USERS))]
+    The role is read from the database on every request, not from the token, so a
+    demoted admin loses access at once, even with a token issued before the change.
+    """
+
+    async def check(user: Annotated[User, Depends(get_current_user)]) -> User:
+        if not has_permission(user, permission):
+            raise PermissionDeniedError("You don't have permission to do this")
+        return user
+
+    return check
 
 
 def get_moderator(request: Request) -> Moderator:
