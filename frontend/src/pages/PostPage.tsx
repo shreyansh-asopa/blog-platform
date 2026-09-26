@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { ApiError } from '../api/client'
 import { postsApi } from '../api/endpoints'
+import { useAuth } from '../auth/useAuth'
 import { Avatar } from '../components/Avatar'
 import { Comments } from '../components/Comments'
 import { ErrorMessage } from '../components/ErrorMessage'
@@ -14,6 +15,7 @@ import styles from './PostPage.module.css'
 
 export function PostPage() {
   const { slug = '' } = useParams()
+  const { user } = useAuth()
   const post = useQuery({ queryKey: ['post', slug], queryFn: () => postsApi.bySlug(slug) })
 
   useEffect(() => {
@@ -30,6 +32,7 @@ export function PostPage() {
 
   const p = post.data
   const date = p.published_at ?? p.updated_at
+  const canEdit = user !== null && (user.id === p.author.id || user.role === 'admin')
 
   return (
     <div className={styles.page}>
@@ -57,6 +60,11 @@ export function PostPage() {
 
           <footer className={styles.actions}>
             <LikeButton post={p} />
+            {canEdit && (
+              <Link to={`/edit/${p.slug}`} className="btn btn-ghost">
+                Edit post
+              </Link>
+            )}
           </footer>
         </div>
       </article>

@@ -28,12 +28,20 @@ export interface Author {
   username: string
 }
 
+export type PostStatus = 'draft' | 'published'
+
+/** What you send to create or edit a post */
+export interface PostInput {
+  title: string
+  content: string
+}
+
 export interface PostSummary {
   id: string
   title: string
   slug: string
   excerpt: string
-  status: 'draft' | 'published'
+  status: PostStatus
   cover_image: string | null
   published_at: string | null
   created_at: string
@@ -43,8 +51,12 @@ export interface PostSummary {
   comment_count: number
 }
 
-export interface PostDetail extends PostSummary {
+/** A post as its author gets it back after saving */
+export interface PostRead extends PostSummary {
   content: string
+}
+
+export interface PostDetail extends PostRead {
   /** Always false when logged out */
   liked_by_me: boolean
 }

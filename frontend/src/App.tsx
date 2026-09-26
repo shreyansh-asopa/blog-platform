@@ -1,8 +1,10 @@
 import { Route, Routes } from 'react-router'
 import { RequireAuth } from './auth/RequireAuth'
 import { Layout } from './components/Layout'
+import { EditorPage } from './pages/EditorPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { MyPostsPage } from './pages/MyPostsPage'
 import { NotFoundPage, PlaceholderPage } from './pages/PlaceholderPage'
 import { PostPage } from './pages/PostPage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -21,7 +23,15 @@ export function App() {
           path="write"
           element={
             <RequireAuth>
-              <PlaceholderPage title="Write a post" />
+              <EditorPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="edit/:slug"
+          element={
+            <RequireAuth>
+              <EditorPage />
             </RequireAuth>
           }
         />
@@ -29,7 +39,7 @@ export function App() {
           path="me/posts"
           element={
             <RequireAuth>
-              <PlaceholderPage title="My posts" />
+              <MyPostsPage />
             </RequireAuth>
           }
         />
@@ -37,7 +47,7 @@ export function App() {
           path="me/drafts"
           element={
             <RequireAuth>
-              <PlaceholderPage title="Drafts" />
+              <MyPostsPage drafts />
             </RequireAuth>
           }
         />
