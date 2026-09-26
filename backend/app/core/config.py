@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     postgres_user: str
     postgres_password: str
     postgres_db: str
+    # Separate database the test suite runs against
+    postgres_test_db: str = "blog_test"
     # "localhost" when running on your machine, "db" inside Docker Compose
     postgres_host: str = "localhost"
     postgres_port: int = 5432

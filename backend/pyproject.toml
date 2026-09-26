@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "REST API for the blog platform"
 requires-python = ">=3.13"
 dependencies = [
+    "alembic>=1.20.0",
     "asyncpg>=0.31.0",
     "fastapi>=0.141.1",
     "pydantic-settings>=2.15.0",
@@ -21,6 +22,10 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+# The local alembic/ migrations folder would otherwise make ruff treat the package as ours
+known-third-party = ["alembic"]
 
 [dependency-groups]
 dev = [
