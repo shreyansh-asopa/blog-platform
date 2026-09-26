@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings
 from app.core.exceptions import AuthenticationError
 from app.core.security import decode_access_token
+from app.integrations.moderation import Moderator
 from app.models import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.pagination import PageParams
@@ -54,6 +55,10 @@ async def get_current_user(user: Annotated[User | None, Depends(get_optional_use
     return user
 
 
+def get_moderator(request: Request) -> Moderator:
+    return request.app.state.moderator
+
+
 def get_page_params(
     page: Annotated[int, Query(ge=1, description="Page number, starting at 1")] = 1,
     size: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
@@ -66,3 +71,4 @@ AppSettings = Annotated[Settings, Depends(get_settings)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 OptionalUser = Annotated[User | None, Depends(get_optional_user)]
 Pagination = Annotated[PageParams, Depends(get_page_params)]
+ModeratorDep = Annotated[Moderator, Depends(get_moderator)]

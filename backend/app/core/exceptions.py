@@ -36,6 +36,11 @@ class ConflictError(AppError):
     code = "conflict"
 
 
+class ContentRejectedError(AppError):
+    status_code = 422
+    code = "content_rejected"
+
+
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     headers = {"WWW-Authenticate": "Bearer"} if isinstance(exc, AuthenticationError) else None
     return JSONResponse(

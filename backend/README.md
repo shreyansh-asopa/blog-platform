@@ -44,12 +44,19 @@ uv run uvicorn app.main:app --reload
 | DELETE | `/api/v1/posts/{id}` | Author or admin | Soft delete (hidden everywhere, kept in the database) |
 | PUT | `/api/v1/posts/{id}/like` | Bearer token | Like a published post (not your own); repeating is harmless |
 | DELETE | `/api/v1/posts/{id}/like` | Bearer token | Remove your like |
+| GET | `/api/v1/posts/{id}/comments?page=&size=` | Optional | A post's comments, oldest first |
+| POST | `/api/v1/posts/{id}/comments` | Bearer token | Comment on a published post (JSON: `content`) |
+| DELETE | `/api/v1/comments/{id}` | Comment author, post author or admin | Soft delete a comment |
 | GET | `/api/v1/me/posts?status=` | Bearer token | Your own posts, drafts included; filter with `draft`/`published` |
 
 Post rules: the slug follows a draft's title but is frozen once published, so shared links
 keep working. The excerpt is generated from the content unless you set your own.
 Someone else's draft returns 404, so drafts can't be discovered.
-Every post includes `like_count`; `GET /posts/{slug}` also says `liked_by_me`.
+Every post includes `like_count` and `comment_count`; `GET /posts/{slug}` also says `liked_by_me`.
+
+Comments are checked by moderation before they are saved (422 `content_rejected` if refused).
+By default a built-in word list decides. Set `MODERATION_API_URL` in `.env` to use an external
+API instead; if it is down, comments are accepted unchecked and a warning is logged.
 
 Try it in the browser at `/docs`: register, then click **Authorize**, log in, and call `/users/me`.
 

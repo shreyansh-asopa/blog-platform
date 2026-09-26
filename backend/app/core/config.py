@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
+    # Comment moderation. Without a URL the built-in word list is used.
+    # With one, comments are sent to that API (see app/integrations/moderation.py)
+    moderation_api_url: str | None = None
+    moderation_api_key: str | None = None
+    moderation_timeout_seconds: float = 3.0
+    moderation_retries: int = 2
+
     @property
     def database_url(self) -> str:
         return (
