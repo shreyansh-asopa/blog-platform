@@ -94,6 +94,36 @@ export async function api<T>(
   }
 }
 
+/**
+ * Downloads a file that needs the login token, so a plain <a href> won't do: fetch it,
+ * then hand the browser a temporary blob: URL to save.
+ */
+export async function download(path: string, fallbackName: string): Promise<void> {
+  const headers = new Headers()
+  const token = tokenStore.get()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+
+  let response: Response
+  try {
+    response = await fetch(BASE + path, { headers })
+  } catch {
+    throw new ApiError(0, 'network_error', 'Could not reach the server. Is the API running?')
+  }
+  if (response.status === 401 && token) onUnauthorized()
+  if (!response.ok) throw await toApiError(response)
+
+  // The server names the file in Content-Disposition: attachment; filename="..."
+  const disposition = response.headers.get('Content-Disposition') ?? ''
+  const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? fallbackName
+
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
 async function toApiError(response: Response): Promise<ApiError> {
   try {
     const { error } = await response.json()
