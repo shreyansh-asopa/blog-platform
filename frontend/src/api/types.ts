@@ -75,3 +75,24 @@ export interface Comment {
   updated_at: string
   author: Author
 }
+
+export type AuditAction =
+  | 'user.role_changed'
+  | 'post.updated'
+  | 'post.published'
+  | 'post.unpublished'
+  | 'post.deleted'
+  | 'comment.deleted'
+
+/** One entry in the admin audit log: who did what, and when */
+export interface AuditLog {
+  id: number
+  /** Null once the user who acted has been deleted */
+  actor: Author | null
+  action: AuditAction
+  entity_type: string
+  entity_id: string
+  /** Depends on the action, e.g. {username, from, to} for a role change */
+  details: Record<string, unknown>
+  created_at: string
+}
