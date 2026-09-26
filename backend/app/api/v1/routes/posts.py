@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, File, UploadFile, status
+from fastapi import APIRouter, File, Query, UploadFile, status
 
 from app.api.deps import (
     AppSettings,
@@ -21,9 +21,17 @@ router = APIRouter(prefix="/posts", tags=["posts"])
 
 
 @router.get("")
-async def list_posts(db: DbSession, params: Pagination) -> Page[PostSummary]:
-    """The public feed: published posts, newest first."""
-    posts, total = await PostService(db).list_published(params)
+async def list_posts(
+    db: DbSession,
+    params: Pagination,
+    q: Annotated[
+        str | None,
+        Query(max_length=200, description='Search words. Supports "phrases", or, -exclude'),
+    ] = None,
+    author: Annotated[str | None, Query(max_length=50, description="A username")] = None,
+) -> Page[PostSummary]:
+    """The public feed: published posts, newest first. With `q`, best matches first."""
+    posts, total = await PostService(db).list_published(params, q, author)
     return Page(
         items=[PostSummary.model_validate(p) for p in posts],
         total=total,

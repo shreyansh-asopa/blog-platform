@@ -1,0 +1,62 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.heading {
+  margin: 0;
+  font-size: 32px;
+  letter-spacing: -0.02em;
+}
+
+/* One rounded box holding the icon, the text field and the button */
+.form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-muted);
+}
+
+.form:focus-within {
+  border-color: var(--accent);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+}
+
+.input:focus-visible {
+  outline: none;
+}
+
+.tips p {
+  margin: 0 0 8px;
+}
+
+.tips ul {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.9;
+}
+
+.tips code {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--surface-hover);
+  color: var(--text);
+  font-size: 13px;
+}

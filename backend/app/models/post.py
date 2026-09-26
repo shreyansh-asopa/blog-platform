@@ -2,7 +2,18 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text, func, select
+from sqlalchemy import (
+    Computed,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    func,
+    select,
+)
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 
 from app.db.base import Base, SoftDeleteMixin, TimestampMixin
@@ -16,11 +27,19 @@ class PostStatus(enum.StrEnum):
     PUBLISHED = "published"
 
 
+SEARCH_VECTOR = (
+    "setweight(to_tsvector('english', title), 'A') || "
+    "setweight(to_tsvector('english', content), 'B')"
+)
+
+
 class Post(TimestampMixin, SoftDeleteMixin, Base):
     __tablename__ = "posts"
     __table_args__ = (
         # The public feed: published posts, newest first (Postgres reads the index backwards)
         Index("ix_posts_status_published_at", "status", "published_at"),
+        # Search: a GIN index maps each word to the posts containing it, like a book's index
+        Index("ix_posts_search_vector", "search_vector", postgresql_using="gin"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -41,6 +60,14 @@ class Post(TimestampMixin, SoftDeleteMixin, Base):
     cover_image: Mapped[str | None] = mapped_column(String(255))
     # Set on first publish and kept afterwards, so unpublish/republish doesn't bump a post
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # The post's words, stemmed ("running" -> "run") and with filler words like "the"
+    # dropped. Postgres keeps it up to date itself; a title match (A) outranks a body
+    # match (B). Deferred: only search queries read it, never loaded with a post
+    search_vector: Mapped[str | None] = mapped_column(
+        TSVECTOR,
+        Computed(SEARCH_VECTOR, persisted=True),
+        deferred=True,
+    )
 
     # Loaded in the same query as the post (a JOIN), so listing posts never
     # fires one extra query per post to fetch its author (the "N+1" problem)

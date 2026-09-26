@@ -69,10 +69,9 @@ export function Layout() {
           <NavLink to="/" end className={navClass}>
             <Icon name="feed" /> Feed
           </NavLink>
-          {/* Wired up once the backend has a search endpoint */}
-          <span className={`${styles.navLink} ${styles.disabled}`} aria-disabled>
-            <Icon name="search" /> Search <span className={styles.soon}>Soon</span>
-          </span>
+          <NavLink to="/search" className={navClass}>
+            <Icon name="search" /> Search
+          </NavLink>
           {user && (
             <>
               <NavLink to="/write" className={navClass}>

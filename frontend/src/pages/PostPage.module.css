@@ -39,8 +39,14 @@
 }
 
 .author {
+  display: block;
   font-weight: 700;
   font-size: 16px;
+  text-decoration: none;
+}
+
+.author:hover {
+  color: var(--accent);
 }
 
 .title {

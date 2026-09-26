@@ -23,6 +23,15 @@ export interface Page<T> {
   size: number
 }
 
+/** GET /users/{username}: what anyone can see about an author */
+export interface Profile {
+  id: string
+  username: string
+  created_at: string
+  /** Published posts only */
+  post_count: number
+}
+
 export interface Author {
   id: string
   username: string

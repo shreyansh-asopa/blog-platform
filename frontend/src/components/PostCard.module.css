@@ -16,7 +16,16 @@
 }
 
 .author {
+  position: relative;
+  z-index: 1;
+  display: block;
   font-weight: 600;
+  text-decoration: none;
+}
+
+.author:hover {
+  color: var(--accent);
+  text-decoration: underline;
 }
 
 .title {

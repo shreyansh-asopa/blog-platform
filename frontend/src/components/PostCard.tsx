@@ -13,7 +13,10 @@ export function PostCard({ post }: { post: PostSummary }) {
       <header className={styles.meta}>
         <Avatar name={post.author.username} size={28} />
         <div>
-          <div className={styles.author}>{post.author.username}</div>
+          {/* Above the card-wide link, so it can be clicked on its own */}
+          <Link to={`/u/${post.author.username}`} className={styles.author}>
+            {post.author.username}
+          </Link>
           <time className="muted" dateTime={date}>
             {formatDate(date)}
           </time>
