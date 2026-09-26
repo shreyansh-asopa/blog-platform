@@ -1,7 +1,7 @@
 [project]
 name = "blog-backend"
 version = "0.1.0"
-description = "REST API for the blog platform"
+description = "REST API for Lumen"
 requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.20.0",

@@ -10,7 +10,7 @@ REPO_ROOT_ENV = Path(__file__).resolve().parents[3] / ".env"
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=REPO_ROOT_ENV, extra="ignore")
 
-    app_name: str = "Blog Platform API"
+    app_name: str = "Lumen API"
 
     postgres_user: str
     postgres_password: str
