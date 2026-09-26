@@ -42,6 +42,9 @@ uv run uvicorn app.main:app --reload
 | POST | `/api/v1/posts/{id}/publish` | Author or admin | Make a draft public |
 | POST | `/api/v1/posts/{id}/unpublish` | Author or admin | Turn it back into a draft |
 | DELETE | `/api/v1/posts/{id}` | Author or admin | Soft delete (hidden everywhere, kept in the database) |
+| POST | `/api/v1/posts/{id}/cover` | Author or admin | Set or replace the cover (multipart field `file`: JPEG, PNG or WebP, max 5 MB) |
+| DELETE | `/api/v1/posts/{id}/cover` | Author or admin | Remove the cover |
+| GET | `/uploads/covers/{name}` | — | The cover image itself (the URL is in the post's `cover_image`) |
 | PUT | `/api/v1/posts/{id}/like` | Bearer token | Like a published post (not your own); repeating is harmless |
 | DELETE | `/api/v1/posts/{id}/like` | Bearer token | Remove your like |
 | GET | `/api/v1/posts/{id}/comments?page=&size=` | Optional | A post's comments, oldest first |
@@ -92,6 +95,12 @@ uv run pytest                    # tests (needs the db container running)
 uv run ruff check .              # lint
 uv run ruff format .             # auto-format
 ```
+
+Covers: the file type is checked from the file's own bytes, not its name, and each file is
+saved under a random name. Too large is 413 `file_too_large`; not an image is 415
+`unsupported_file_type`. Replacing or removing a cover deletes the old file. Files live in
+`UPLOAD_DIR` (default `uploads/`, a Docker volume in Compose) behind a `Storage` interface
+(`app/integrations/storage.py`), so they can move to S3 later.
 
 Admins and the audit log: the role is read from the database on every request, so promoting
 or demoting someone takes effect at once, even with a token they already have. Role changes,

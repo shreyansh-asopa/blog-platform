@@ -1,3 +1,4 @@
+import logging
 import secrets
 import uuid
 from datetime import UTC, datetime
@@ -5,14 +6,22 @@ from datetime import UTC, datetime
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ConflictError, NotFoundError, PermissionDeniedError
+from app.core.exceptions import (
+    ConflictError,
+    NotFoundError,
+    PermissionDeniedError,
+    UnsupportedFileTypeError,
+)
 from app.core.text import make_excerpt, slugify
+from app.integrations.storage import Storage, detect_image_type
 from app.models import AuditAction, Post, PostStatus, User
 from app.permissions import Permission, has_permission
 from app.repositories.audit_log_repository import AuditLogRepository
 from app.repositories.post_repository import PostRepository
 from app.schemas.pagination import PageParams
 from app.schemas.post import PostCreate, PostUpdate
+
+logger = logging.getLogger(__name__)
 
 
 def can_manage(user: User, post: Post) -> bool:
@@ -106,7 +115,54 @@ class PostService:
         )
         await self.session.commit()
 
+    # --- Cover image ---
+
+    async def set_cover(
+        self, user: User, post_id: uuid.UUID, data: bytes, storage: Storage
+    ) -> Post:
+        post = await self._get_managed(user, post_id)
+        extension = detect_image_type(data)
+        if extension is None:
+            raise UnsupportedFileTypeError("The cover must be a JPEG, PNG or WebP image")
+
+        old_url = post.cover_image
+        # File first, then the database: if saving the post fails we remove the new file,
+        # so the post never points at a file that doesn't exist
+        new_url = await storage.save("covers", data, extension)
+        post.cover_image = new_url
+        self._audit_if_not_author(user, AuditAction.POST_UPDATED, post, fields=["cover_image"])
+        try:
+            post = await self._save(post)
+        except Exception:
+            await storage.delete(new_url)
+            raise
+
+        await self._delete_file(storage, old_url)
+        return post
+
+    async def remove_cover(self, user: User, post_id: uuid.UUID, storage: Storage) -> Post:
+        post = await self._get_managed(user, post_id)
+        old_url = post.cover_image
+        if old_url is None:
+            return post
+        post.cover_image = None
+        self._audit_if_not_author(user, AuditAction.POST_UPDATED, post, fields=["cover_image"])
+        post = await self._save(post)
+        await self._delete_file(storage, old_url)
+        return post
+
     # --- Helpers ---
+
+    @staticmethod
+    async def _delete_file(storage: Storage, url: str | None) -> None:
+        # Only after the database change is saved. If this fails, the cost is an unused
+        # file on disk, which is harmless, so it is logged rather than failing the request
+        if url is None:
+            return
+        try:
+            await storage.delete(url)
+        except OSError:
+            logger.warning("Could not delete old cover %s", url, exc_info=True)
 
     def _audit_if_not_author(self, user: User, action: AuditAction, post: Post, **details) -> None:
         # Authors editing their own posts is everyday use; an admin changing

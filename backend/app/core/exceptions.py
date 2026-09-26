@@ -41,6 +41,16 @@ class ContentRejectedError(AppError):
     code = "content_rejected"
 
 
+class FileTooLargeError(AppError):
+    status_code = 413
+    code = "file_too_large"
+
+
+class UnsupportedFileTypeError(AppError):
+    status_code = 415
+    code = "unsupported_file_type"
+
+
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     headers = {"WWW-Authenticate": "Bearer"} if isinstance(exc, AuthenticationError) else None
     return JSONResponse(

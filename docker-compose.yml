@@ -31,6 +31,9 @@ services:
       POSTGRES_PORT: 5432
     ports:
       - "${API_PORT:-8000}:8000"
+    volumes:
+      # Uploaded covers live outside the container, so rebuilding it doesn't lose them
+      - uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -42,3 +45,4 @@ services:
 
 volumes:
   db_data:
+  uploads:
