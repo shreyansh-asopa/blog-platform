@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Post, PostStatus, User
 from app.repositories.pagination import paginate
+from app.repositories.user_repository import username_is
 from app.schemas.pagination import PageParams
 
 
@@ -39,7 +40,7 @@ class PostRepository:
         query = _visible().where(Post.status == PostStatus.PUBLISHED)
         order_by = [Post.published_at.desc(), Post.id]
         if author:
-            query = query.where(Post.author_id.in_(select(User.id).where(User.username == author)))
+            query = query.where(Post.author_id.in_(select(User.id).where(username_is(author))))
         if search := (search or "").strip():
             # websearch_to_tsquery never fails on odd input, unlike to_tsquery
             terms = func.websearch_to_tsquery("english", search)

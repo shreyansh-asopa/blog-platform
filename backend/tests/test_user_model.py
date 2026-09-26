@@ -58,3 +58,14 @@ async def test_email_and_username_must_be_unique(db: AsyncSession, field: str):
 
     with pytest.raises(IntegrityError, match=f"uq_users_{field}"):
         await db.commit()
+
+
+async def test_usernames_differing_only_in_case_clash(db: AsyncSession):
+    db.add(make_user())
+    await db.commit()
+
+    # The database refuses this even if the app's own check were skipped, e.g. two sign-ups at once
+    db.add(make_user(email="other@example.com", username="ADA"))
+
+    with pytest.raises(IntegrityError, match="uq_users_username_lower"):
+        await db.commit()

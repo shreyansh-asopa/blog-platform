@@ -57,6 +57,7 @@ def test_register_lowercases_the_email(client: TestClient):
         ({"username": "ada2"}, "Email is already registered"),
         ({"email": "ADA@example.com", "username": "ada2"}, "Email is already registered"),
         ({"email": "other@example.com"}, "Username is already taken"),
+        ({"email": "other@example.com", "username": "ADA"}, "Username is already taken"),
     ],
 )
 def test_register_rejects_duplicates(client: TestClient, second: dict, message: str):
@@ -72,6 +73,11 @@ def test_register_rejects_duplicates(client: TestClient, second: dict, message: 
             "request_id": response.headers["X-Request-ID"],
         }
     }
+
+
+def test_register_keeps_the_username_as_typed(client: TestClient):
+    # Only comparisons ignore case; the name shows the way its owner wrote it
+    assert register(client, username="Ada_Lovelace")["username"] == "Ada_Lovelace"
 
 
 @pytest.mark.parametrize(
@@ -92,7 +98,7 @@ def test_register_validates_input(client: TestClient, bad: dict):
 # --- Login ---
 
 
-@pytest.mark.parametrize("identifier", ["ada", "ada@example.com", "ADA@example.com"])
+@pytest.mark.parametrize("identifier", ["ada", "ADA", "ada@example.com", "ADA@example.com"])
 def test_login_with_username_or_email(client: TestClient, identifier: str):
     register(client)
 

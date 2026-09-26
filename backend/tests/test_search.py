@@ -98,6 +98,7 @@ def test_author_filter(client: TestClient, ada, grace):
 
     assert titles(search(client, author="grace")) == ["By Grace about space"]
     assert titles(search(client, author="grace", q="space")) == ["By Grace about space"]
+    assert titles(search(client, author="GRACE")) == ["By Grace about space"]
     assert search(client, author="nobody")["total"] == 0
 
 
@@ -117,6 +118,13 @@ def test_profile_shows_published_post_count(client: TestClient, ada):
     assert body["post_count"] == 2
     # Public: no email, role or anything else private
     assert set(body) == {"id", "username", "created_at", "post_count"}
+
+
+def test_profile_lookup_ignores_case(client: TestClient, ada):
+    response = client.get(f"{USERS}/ADA")
+
+    assert response.status_code == 200
+    assert response.json()["username"] == "ada"
 
 
 def test_profile_of_unknown_user_is_404(client: TestClient):
