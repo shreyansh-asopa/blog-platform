@@ -2,7 +2,7 @@
 
 FastAPI REST API (Python 3.13, managed with `uv`). Runs on `http://localhost:8000`, docs at `/docs`.
 
-Will contain:
+Contains:
 - `app/` — core, models, schemas, repositories, services, API routes
 - `tests/` — pytest suite
 - `pyproject.toml` — dependencies (installed with `uv sync`)
@@ -35,6 +35,18 @@ uv run uvicorn app.main:app --reload
 | POST | `/api/v1/auth/register` | — | Create an account (JSON: `email`, `username`, `password`) |
 | POST | `/api/v1/auth/login` | — | Get a token (form: `username` = username or email, `password`) |
 | GET | `/api/v1/users/me` | Bearer token | The logged-in user |
+| GET | `/api/v1/posts?page=&size=` | — | Published posts, newest first (no `content`, max `size` 100) |
+| GET | `/api/v1/posts/{slug}` | Optional | One post; drafts only for their author or an admin |
+| POST | `/api/v1/posts` | Bearer token | Create a draft (JSON: `title`, `content`, optional `excerpt`) |
+| PATCH | `/api/v1/posts/{id}` | Author or admin | Change any of `title`, `content`, `excerpt` |
+| POST | `/api/v1/posts/{id}/publish` | Author or admin | Make a draft public |
+| POST | `/api/v1/posts/{id}/unpublish` | Author or admin | Turn it back into a draft |
+| DELETE | `/api/v1/posts/{id}` | Author or admin | Soft delete (hidden everywhere, kept in the database) |
+| GET | `/api/v1/me/posts?status=` | Bearer token | Your own posts, drafts included; filter with `draft`/`published` |
+
+Post rules: the slug follows a draft's title but is frozen once published, so shared links
+keep working. The excerpt is generated from the content unless you set your own.
+Someone else's draft returns 404, so drafts can't be discovered.
 
 Try it in the browser at `/docs`: register, then click **Authorize**, log in, and call `/users/me`.
 

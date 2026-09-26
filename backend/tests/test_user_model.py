@@ -2,7 +2,7 @@ import uuid
 from collections.abc import AsyncIterator
 
 import pytest
-from sqlalchemy import delete
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,11 +16,11 @@ pytestmark = pytest.mark.anyio
 async def db(settings) -> AsyncIterator[AsyncSession]:
     engine = create_engine(settings)
     async with create_sessionmaker(engine)() as session:
-        yield session
-        # Leave the table empty for the next test
-        await session.rollback()
-        await session.execute(delete(User))
+        # Start from empty tables, whatever earlier tests left behind
+        await session.execute(text("TRUNCATE users CASCADE"))
         await session.commit()
+        yield session
+        await session.rollback()
     await engine.dispose()
 
 
