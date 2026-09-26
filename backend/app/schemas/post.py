@@ -55,7 +55,14 @@ class PostSummary(BaseModel):
     created_at: datetime
     updated_at: datetime
     author: AuthorRead
+    like_count: int
 
 
 class PostRead(PostSummary):
     content: str = Field(description="Full post body")
+
+
+class PostDetail(PostRead):
+    """A single post as a reader sees it, including whether they have liked it."""
+
+    liked_by_me: bool = Field(description="Always false when not logged in")
