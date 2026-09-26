@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     moderation_timeout_seconds: float = 3.0
     moderation_retries: int = 2
 
+    # Uploaded files (post covers). Relative paths are resolved from where the app starts:
+    # backend/uploads locally, /app/uploads (a Docker volume) in the container
+    upload_dir: Path = Path("uploads")
+    max_cover_bytes: int = 5 * 1024 * 1024
+
     @property
     def database_url(self) -> str:
         return (

@@ -44,10 +44,14 @@ async def _empty_tables(settings: Settings) -> None:
 
 
 @pytest.fixture
-def client(settings: Settings) -> Iterator[TestClient]:
-    """An API client on the test database, starting from empty tables."""
+def client(settings: Settings, tmp_path: Path) -> Iterator[TestClient]:
+    """An API client on the test database, starting from empty tables.
+
+    Uploads go to a fresh temporary folder, so tests never touch the real one.
+    """
     asyncio.run(_empty_tables(settings))
-    with TestClient(create_app(settings)) as test_client:
+    app_settings = settings.model_copy(update={"upload_dir": tmp_path / "uploads"})
+    with TestClient(create_app(app_settings)) as test_client:
         yield test_client
 
 
