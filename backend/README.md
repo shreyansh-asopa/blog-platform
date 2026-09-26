@@ -26,6 +26,22 @@ uv sync                          # install dependencies into .venv
 uv run uvicorn app.main:app --reload
 ```
 
+## Database migrations
+
+Schema changes go through Alembic, never by hand. The Docker container runs
+`alembic upgrade head` automatically on start. On your machine (from `backend/`):
+
+```sh
+uv run alembic upgrade head                                # apply all pending migrations
+uv run alembic current                                     # which migration the database is on
+uv run alembic history                                     # list all migrations
+uv run alembic revision --autogenerate -m "add posts"      # new migration after changing a model
+uv run alembic downgrade -1                                # undo the latest migration
+```
+
+Always read a generated migration before running it. Autogenerate can miss things,
+such as dropping Postgres enum types in `downgrade()`.
+
 ## Checks
 
 ```sh
