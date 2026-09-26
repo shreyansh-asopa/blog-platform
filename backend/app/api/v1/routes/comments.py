@@ -1,8 +1,15 @@
 import uuid
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
-from app.api.deps import CurrentUser, DbSession, ModeratorDep, OptionalUser, Pagination
+from app.api.deps import (
+    CurrentUser,
+    DbSession,
+    ModeratorDep,
+    OptionalUser,
+    Pagination,
+    limit_comments,
+)
 from app.schemas.comment import CommentCreate, CommentRead
 from app.schemas.pagination import Page
 from app.services.comment_service import CommentService
@@ -28,7 +35,11 @@ async def list_comments(
     )
 
 
-@router.post("/posts/{post_id}/comments", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/posts/{post_id}/comments",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(limit_comments)],
+)
 async def create_comment(
     post_id: uuid.UUID,
     data: CommentCreate,

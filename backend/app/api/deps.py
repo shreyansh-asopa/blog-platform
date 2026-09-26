@@ -3,11 +3,12 @@ from typing import Annotated
 
 import jwt
 from fastapi import Depends, Query, Request
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import Settings
-from app.core.exceptions import AuthenticationError, PermissionDeniedError
+from app.core.exceptions import AuthenticationError, PermissionDeniedError, RateLimitedError
+from app.core.rate_limit import RateLimiter
 from app.core.security import decode_access_token
 from app.integrations.moderation import Moderator
 from app.integrations.storage import Storage
@@ -77,6 +78,44 @@ def require_permission(
         return user
 
     return check
+
+
+def _enforce(request: Request, key: str, per_minute: int, message: str) -> None:
+    limiter: RateLimiter = request.app.state.rate_limiter
+    wait = limiter.hit(key, limit=per_minute, window=60)
+    if wait is not None:
+        raise RateLimitedError(message, retry_after=wait)
+
+
+async def limit_login_attempts(
+    request: Request,
+    form: Annotated[OAuth2PasswordRequestForm, Depends()],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> None:
+    """Slows down password guessing: a few attempts per minute per IP address and username.
+
+    Keyed on both, so one person guessing can't lock others on the same network out.
+    """
+    ip = request.client.host if request.client else "unknown"
+    _enforce(
+        request,
+        f"login:{ip}:{form.username.lower()}",
+        settings.login_attempts_per_minute,
+        "Too many login attempts, please wait a minute",
+    )
+
+
+async def limit_comments(
+    request: Request,
+    user: Annotated[User, Depends(get_current_user)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> None:
+    _enforce(
+        request,
+        f"comment:{user.id}",
+        settings.comments_per_minute,
+        "You're commenting too fast, please wait a moment",
+    )
 
 
 def get_moderator(request: Request) -> Moderator:

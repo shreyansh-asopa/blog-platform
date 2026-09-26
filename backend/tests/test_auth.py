@@ -65,7 +65,13 @@ def test_register_rejects_duplicates(client: TestClient, second: dict, message: 
     response = client.post(REGISTER, json=ADA | second)
 
     assert response.status_code == 409
-    assert response.json() == {"error": {"code": "conflict", "message": message}}
+    assert response.json() == {
+        "error": {
+            "code": "conflict",
+            "message": message,
+            "request_id": response.headers["X-Request-ID"],
+        }
+    }
 
 
 @pytest.mark.parametrize(

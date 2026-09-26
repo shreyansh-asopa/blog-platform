@@ -3,6 +3,8 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.logging import LogFormat
+
 # The .env file lives at the repo root, shared with docker-compose.yml
 REPO_ROOT_ENV = Path(__file__).resolve().parents[3] / ".env"
 
@@ -11,6 +13,18 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=REPO_ROOT_ENV, extra="ignore")
 
     app_name: str = "Lumen API"
+
+    # "json" for machines (Docker, log search tools), "console" for reading in a terminal
+    log_format: LogFormat = "json"
+    log_level: str = "INFO"
+
+    # Web pages allowed to call the API from a browser. Set in .env as a JSON list:
+    # CORS_ORIGINS=["https://lumen.example"]
+    cors_origins: list[str] = ["http://localhost:5173"]
+
+    # Rate limits, per minute. Login counts attempts per IP address and username
+    login_attempts_per_minute: int = 5
+    comments_per_minute: int = 10
 
     postgres_user: str
     postgres_password: str
