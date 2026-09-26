@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage, PlaceholderPage } from './pages/PlaceholderPage'
+import { PostPage } from './pages/PostPage'
 import { RegisterPage } from './pages/RegisterPage'
 
 export function App() {
@@ -14,6 +15,7 @@ export function App() {
         <Route index element={<HomePage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
+        <Route path="p/:slug" element={<PostPage />} />
 
         <Route
           path="write"

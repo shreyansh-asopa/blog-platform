@@ -1,7 +1,59 @@
+/* Wider than the default reading column, to give the hero room */
+.home {
+  max-width: 1120px;
+  margin-inline: auto;
+}
+
 .feed {
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+/* Under the hero, the feed lines up with the hero's left edge instead of centring */
+* + .feed {
+  margin-inline: 0;
+}
+
+.feedHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.feedHeader h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.feedHeader > span {
+  font-size: 15px;
+}
+
+/* The little "live" dot, as on hashnode */
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin: 0 8px 1px 0;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.list {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* The previous page stays visible, dimmed, while the next one loads */
+.list[aria-busy='true'] {
+  opacity: 0.6;
+  transition: opacity 0.2s;
 }
 
 .empty {

@@ -1,0 +1,25 @@
+.like {
+  border-color: var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.like:hover:not(:disabled) {
+  border-color: #e11d48;
+  color: #e11d48;
+}
+
+/* Keep full colour while the request is in flight: the change has already been shown */
+.like:disabled {
+  opacity: 1;
+  cursor: progress;
+}
+
+.heart {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.like[aria-pressed='true'] {
+  border-color: #e11d48;
+  color: #e11d48;
+}

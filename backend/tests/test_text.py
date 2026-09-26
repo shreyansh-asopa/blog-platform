@@ -31,3 +31,26 @@ def test_long_content_is_cut_at_a_word():
 
     assert excerpt.endswith("abcdefghi…")
     assert len(excerpt) <= 201
+
+
+@pytest.mark.parametrize(
+    ("markdown", "plain"),
+    [
+        (
+            "## A heading\n\nSome **bold** and _italic_ text.",
+            "A heading Some bold and italic text.",
+        ),
+        (
+            "Use `uv run` to start. See [the docs](https://x.dev).",
+            "Use uv run to start. See the docs.",
+        ),
+        ("- one\n- two\n1. three", "one two three"),
+        ("> quoted words", "quoted words"),
+        ("Before\n\n```python\nprint('hi')\n```\n\nAfter", "Before After"),
+        ("![a cat](cat.png) Caption", "Caption"),
+        ("| a | b |\n|---|---|\n| 1 | 2 |", "a b 1 2"),
+        ("snake_case_name stays", "snake_case_name stays"),
+    ],
+)
+def test_excerpt_strips_markdown(markdown, plain):
+    assert make_excerpt(markdown) == plain

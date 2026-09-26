@@ -3,23 +3,26 @@
  * theme is just a second set of values below.
  */
 :root {
-  --bg: #f5f5f4;
+  --bg: #fafafa;
   --surface: #ffffff;
-  --surface-hover: #fafaf9;
-  --border: #e7e5e4;
-  --text: #1c1917;
-  --text-muted: #6b6560;
+  --surface-hover: #f1f1f3;
+  --sidebar: #ffffff;
+  --border: #e6e6ea;
+  --text: #18181b;
+  --text-muted: #63636b;
   --accent: #4f46e5;
   --accent-hover: #4338ca;
   --accent-soft: #eef2ff;
   --on-accent: #ffffff;
+  --primary: #18181b;
+  --primary-hover: #3f3f46;
+  --on-primary: #ffffff;
   --danger: #dc2626;
   --danger-soft: #fef2f2;
   --focus: #6366f1;
 
   --radius: 8px;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.05);
-  --topbar-height: 56px;
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   color-scheme: light;
@@ -28,16 +31,20 @@
 /* Dark values, used when the OS asks for dark and the user hasn't picked light */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #0f1013;
-    --surface: #181a1f;
-    --surface-hover: #1f2228;
-    --border: #2a2d34;
-    --text: #e8e6e3;
-    --text-muted: #9a978f;
+    --bg: #09090b;
+    --surface: #111114;
+    --surface-hover: #1c1c21;
+    --sidebar: #09090b;
+    --border: #25252b;
+    --text: #ededef;
+    --text-muted: #a1a1aa;
     --accent: #818cf8;
     --accent-hover: #a5b4fc;
     --accent-soft: #1e1b4b;
-    --on-accent: #0f1013;
+    --on-accent: #09090b;
+    --primary: #f4f4f5;
+    --primary-hover: #d4d4d8;
+    --on-primary: #09090b;
     --danger: #f87171;
     --danger-soft: #2a1414;
     --focus: #a5b4fc;
@@ -48,16 +55,20 @@
 
 /* The same dark values when the user picks dark explicitly */
 :root[data-theme='dark'] {
-  --bg: #0f1013;
-  --surface: #181a1f;
-  --surface-hover: #1f2228;
-  --border: #2a2d34;
-  --text: #e8e6e3;
-  --text-muted: #9a978f;
+  --bg: #09090b;
+  --surface: #111114;
+  --surface-hover: #1c1c21;
+  --sidebar: #09090b;
+  --border: #25252b;
+  --text: #ededef;
+  --text-muted: #a1a1aa;
   --accent: #818cf8;
   --accent-hover: #a5b4fc;
   --accent-soft: #1e1b4b;
-  --on-accent: #0f1013;
+  --on-accent: #09090b;
+  --primary: #f4f4f5;
+  --primary-hover: #d4d4d8;
+  --on-primary: #09090b;
   --danger: #f87171;
   --danger-soft: #2a1414;
   --focus: #a5b4fc;
@@ -126,13 +137,14 @@ select {
   cursor: not-allowed;
 }
 
+/* Neutral like hashnode: black on light, white on dark */
 .btn-primary {
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--primary);
+  color: var(--on-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: var(--primary-hover);
 }
 
 .btn-outline {

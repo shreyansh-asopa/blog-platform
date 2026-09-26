@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { Page, PostSummary, Token, User } from './types'
+import type { Comment, LikeStatus, Page, PostDetail, PostSummary, Token, User } from './types'
 
 export const authApi = {
   // The login endpoint is a standard OAuth2 password form, not JSON
@@ -15,4 +15,15 @@ export const authApi = {
 
 export const postsApi = {
   feed: (page = 1, size = 20) => api<Page<PostSummary>>(`/posts?page=${page}&size=${size}`),
+  bySlug: (slug: string) => api<PostDetail>(`/posts/${encodeURIComponent(slug)}`),
+  like: (postId: string) => api<LikeStatus>(`/posts/${postId}/like`, { method: 'PUT' }),
+  unlike: (postId: string) => api<LikeStatus>(`/posts/${postId}/like`, { method: 'DELETE' }),
+}
+
+export const commentsApi = {
+  list: (postId: string, page = 1, size = 20) =>
+    api<Page<Comment>>(`/posts/${postId}/comments?page=${page}&size=${size}`),
+  create: (postId: string, content: string) =>
+    api<Comment>(`/posts/${postId}/comments`, { method: 'POST', body: { content } }),
+  remove: (commentId: string) => api<void>(`/comments/${commentId}`, { method: 'DELETE' }),
 }
