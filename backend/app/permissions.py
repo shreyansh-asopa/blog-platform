@@ -11,6 +11,7 @@ from app.models import User, UserRole
 
 class Permission(enum.StrEnum):
     MANAGE_ANY_POST = "manage_any_post"
+    DELETE_ANY_COMMENT = "delete_any_comment"
 
 
 ROLE_PERMISSIONS: dict[UserRole, frozenset[Permission]] = {

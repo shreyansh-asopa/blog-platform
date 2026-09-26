@@ -1,9 +1,10 @@
 import uuid
 
-from sqlalchemy import Select, exists, func, select
+from sqlalchemy import Select, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Post, PostStatus
+from app.repositories.pagination import paginate
 from app.schemas.pagination import PageParams
 
 
@@ -28,7 +29,7 @@ class PostRepository:
 
     async def list_published(self, params: PageParams) -> tuple[list[Post], int]:
         query = _visible().where(Post.status == PostStatus.PUBLISHED)
-        return await self._paginate(query, params, Post.published_at.desc())
+        return await paginate(self.session, query, params, Post.published_at.desc(), Post.id)
 
     async def list_by_author(
         self, author_id: uuid.UUID, params: PageParams, status: PostStatus | None = None
@@ -36,16 +37,9 @@ class PostRepository:
         query = _visible().where(Post.author_id == author_id)
         if status is not None:
             query = query.where(Post.status == status)
-        return await self._paginate(query, params, Post.updated_at.desc())
+        return await paginate(self.session, query, params, Post.updated_at.desc(), Post.id)
 
     async def add(self, post: Post) -> Post:
         self.session.add(post)
         await self.session.flush()
         return post
-
-    async def _paginate(self, query, params: PageParams, order_by) -> tuple[list[Post], int]:
-        total = await self.session.scalar(select(func.count()).select_from(query.subquery()))
-        # id as a tie-breaker keeps the order stable when timestamps are equal
-        page = query.order_by(order_by, Post.id).offset(params.offset).limit(params.size)
-        items = list(await self.session.scalars(page))
-        return items, total or 0

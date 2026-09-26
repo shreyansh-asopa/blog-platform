@@ -56,6 +56,7 @@ class PostSummary(BaseModel):
     updated_at: datetime
     author: AuthorRead
     like_count: int
+    comment_count: int
 
 
 class PostRead(PostSummary):

@@ -6,6 +6,7 @@ from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text, func, se
 from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 
 from app.db.base import Base, SoftDeleteMixin, TimestampMixin
+from app.models.comment import Comment
 from app.models.like import Like
 from app.models.user import User
 
@@ -45,8 +46,14 @@ class Post(TimestampMixin, SoftDeleteMixin, Base):
     # fires one extra query per post to fetch its author (the "N+1" problem)
     author: Mapped[User] = relationship(lazy="joined")
 
-    # Counted by a subquery inside the same SELECT that loads the post, so a page of
-    # 20 posts is still one query, not 21. Not a real column: nothing is stored
+    # Counted by subqueries inside the same SELECT that loads the post, so a page of
+    # 20 posts is still one query, not 21. Not real columns: nothing is stored
     like_count: Mapped[int] = column_property(
         select(func.count()).where(Like.post_id == id).correlate_except(Like).scalar_subquery()
+    )
+    comment_count: Mapped[int] = column_property(
+        select(func.count())
+        .where(Comment.post_id == id, Comment.deleted_at.is_(None))
+        .correlate_except(Comment)
+        .scalar_subquery()
     )
