@@ -51,6 +51,7 @@ uv run uvicorn app.main:app --reload
 | POST | `/api/v1/posts/{id}/comments` | Bearer token | Comment on a published post (JSON: `content`) |
 | DELETE | `/api/v1/comments/{id}` | Comment author, post author or admin | Soft delete a comment |
 | GET | `/api/v1/me/posts?status=` | Bearer token | Your own posts, drafts included; filter with `draft`/`published` |
+| GET | `/api/v1/me/posts/export?format=csv&status=` | Bearer token | Download all your posts as a CSV file |
 | PATCH | `/api/v1/admin/users/{id}/role` | Admin | Make a user `admin` or `user` (JSON: `role`); not your own |
 | GET | `/api/v1/admin/audit-logs?action=&actor_id=&page=&size=` | Admin | Who did what, newest first |
 
@@ -101,6 +102,10 @@ saved under a random name. Too large is 413 `file_too_large`; not an image is 41
 `unsupported_file_type`. Replacing or removing a cover deletes the old file. Files live in
 `UPLOAD_DIR` (default `uploads/`, a Docker volume in Compose) behind a `Storage` interface
 (`app/integrations/storage.py`), so they can move to S3 later.
+
+Export: the CSV is streamed in batches, so even a large export never sits in memory all at
+once. Cells that a spreadsheet would run as a formula (starting with `=`, `+`, `-`, `@`) are
+prefixed with `'`, and the file starts with a UTF-8 byte-order mark so Excel reads accents.
 
 Admins and the audit log: the role is read from the database on every request, so promoting
 or demoting someone takes effect at once, even with a token they already have. Role changes,

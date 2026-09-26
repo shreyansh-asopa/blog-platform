@@ -4,7 +4,7 @@ from typing import Annotated
 import jwt
 from fastapi import Depends, Query, Request
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import Settings
 from app.core.exceptions import AuthenticationError, PermissionDeniedError
@@ -22,6 +22,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=F
 
 def get_settings(request: Request) -> Settings:
     return request.app.state.settings
+
+
+def get_sessionmaker(request: Request) -> async_sessionmaker[AsyncSession]:
+    return request.app.state.sessionmaker
 
 
 async def get_db(request: Request) -> AsyncIterator[AsyncSession]:
@@ -91,6 +95,7 @@ def get_page_params(
 
 
 DbSession = Annotated[AsyncSession, Depends(get_db)]
+SessionMaker = Annotated[async_sessionmaker[AsyncSession], Depends(get_sessionmaker)]
 AppSettings = Annotated[Settings, Depends(get_settings)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 OptionalUser = Annotated[User | None, Depends(get_optional_user)]
