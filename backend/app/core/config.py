@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # The .env file lives at the repo root, shared with docker-compose.yml
@@ -19,6 +20,11 @@ class Settings(BaseSettings):
     # "localhost" when running on your machine, "db" inside Docker Compose
     postgres_host: str = "localhost"
     postgres_port: int = 5432
+
+    # Signs login tokens. Generate with: openssl rand -hex 32
+    jwt_secret: str = Field(min_length=32)
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
 
     @property
     def database_url(self) -> str:
