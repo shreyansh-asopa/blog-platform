@@ -42,3 +42,24 @@ export interface PostSummary {
   like_count: number
   comment_count: number
 }
+
+export interface PostDetail extends PostSummary {
+  content: string
+  /** Always false when logged out */
+  liked_by_me: boolean
+}
+
+export interface LikeStatus {
+  post_id: string
+  liked: boolean
+  like_count: number
+}
+
+export interface Comment {
+  id: string
+  post_id: string
+  content: string
+  created_at: string
+  updated_at: string
+  author: Author
+}

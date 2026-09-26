@@ -1,4 +1,5 @@
 .card {
+  position: relative;
   padding: 20px 24px;
 }
 
@@ -25,6 +26,21 @@
   letter-spacing: -0.01em;
 }
 
+.link {
+  text-decoration: none;
+}
+
+.link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+}
+
+.card:hover .link {
+  color: var(--accent);
+}
+
 .excerpt {
   margin: 0;
   display: -webkit-box;
@@ -38,4 +54,10 @@
   gap: 16px;
   margin-top: 12px;
   font-size: 14px;
+}
+
+.stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }

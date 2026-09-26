@@ -86,7 +86,12 @@ export async function api<T>(
   if (response.status === 401 && token) onUnauthorized()
   if (!response.ok) throw await toApiError(response)
   if (response.status === 204) return undefined as T
-  return (await response.json()) as T
+  try {
+    return (await response.json()) as T
+  } catch {
+    // e.g. the dev proxy is off and Vite answered with index.html
+    throw new ApiError(response.status, 'invalid_response', 'The server sent an unexpected reply.')
+  }
 }
 
 async function toApiError(response: Response): Promise<ApiError> {

@@ -1,148 +1,186 @@
 .shell {
+  --sidebar-width: 256px;
   min-height: 100vh;
 }
 
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+/* Full-height sidebar, fixed on the left, like hashnode */
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  padding: 20px 16px;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+.sidebarTop {
   display: flex;
   align-items: center;
-  gap: 16px;
-  height: var(--topbar-height);
-  padding: 0 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  justify-content: space-between;
+  padding: 0 8px 20px;
 }
 
 .logo {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
   text-decoration: none;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 .logo span {
   color: var(--accent);
 }
 
-.search {
-  flex: 1;
-  max-width: 420px;
-  min-width: 0;
-  padding: 7px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg);
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-}
-
-.user {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.body {
-  display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
-  gap: 24px;
-  /* Sidebar + gap + the 720px reading column, so the whole page sits centred */
-  max-width: calc(200px + 24px + 720px + 32px);
-  margin: 0 auto;
-  padding: 24px 16px;
-}
-
-.sidebar {
-  position: sticky;
-  top: calc(var(--topbar-height) + 24px);
-  align-self: start;
+.nav,
+.sidebarBottom {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
+/* Theme, account and log in sit at the bottom */
+.sidebarBottom {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
 .navLink {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
   border-radius: var(--radius);
+  background: none;
+  color: var(--text);
+  font-size: 15px;
+  text-align: left;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .navLink:hover {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--surface-hover);
 }
 
 .active {
-  background: var(--surface);
+  background: var(--surface-hover);
   font-weight: 600;
+}
+
+.disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.disabled:hover {
+  background: none;
+}
+
+.soon {
+  margin-left: auto;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  font-weight: 600;
+}
+
+.username {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cta {
+  margin-top: 8px;
 }
 
 .main {
   min-width: 0;
-  max-width: 720px;
+  margin-left: var(--sidebar-width);
+  padding: 32px 40px 64px;
 }
 
-/* Phones and small tablets: the sidebar becomes a row of links above the content */
-@media (max-width: 768px) {
-  .search,
-  .username {
-    display: none;
-  }
-
-  .body {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
-    padding: 16px;
-  }
-
-  .sidebar {
-    position: static;
-    flex-direction: row;
-    overflow-x: auto;
-  }
-
-  .navLink {
-    white-space: nowrap;
-  }
+/* Pages get a comfortable reading column by default. :where() adds no specificity,
+   so a page can set its own max-width (the home page hero is wider). */
+:where(.main > *) {
+  max-width: 760px;
+  margin-inline: auto;
 }
 
-.narrow {
+/* Shown only on phones and small tablets */
+.mobileBar,
+.backdrop,
+/* Two classes, so this beats the global .btn display rule */
+.sidebarTop .closeButton {
   display: none;
 }
 
-/* Phones: tighter top bar so the buttons fit */
-@media (max-width: 480px) {
-  .topbar {
+.iconButton {
+  padding: 6px;
+}
+
+@media (max-width: 900px) {
+  .mobileBar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
     gap: 8px;
+    height: 56px;
     padding: 0 12px;
+    background: var(--sidebar);
+    border-bottom: 1px solid var(--border);
   }
 
-  .actions {
-    gap: 2px;
+  .mobileCta {
+    margin-left: auto;
+    padding: 6px 12px;
   }
 
-  .actions :global(.btn) {
-    padding: 6px 10px;
+  .sidebarTop .closeButton {
+    display: inline-flex;
   }
 
-  .wide {
-    display: none;
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: 0 0 40px rgb(0 0 0 / 0.3);
   }
 
-  .narrow {
-    display: inline;
+  .sidebar[data-open='true'] {
+    transform: none;
+  }
+
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    display: block;
+    background: rgb(0 0 0 / 0.5);
+  }
+
+  .main {
+    margin-left: 0;
+    padding: 20px 16px 48px;
   }
 }

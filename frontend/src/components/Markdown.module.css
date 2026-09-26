@@ -1,0 +1,92 @@
+/* Typography for rendered posts: a comfortable reading size and spacing */
+.prose {
+  font-size: 18px;
+  line-height: 1.7;
+  overflow-wrap: break-word;
+}
+
+.prose > :first-child {
+  margin-top: 0;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  margin: 1.6em 0 0.5em;
+}
+
+.prose h1 {
+  font-size: 1.8em;
+}
+
+.prose h2 {
+  font-size: 1.45em;
+}
+
+.prose h3 {
+  font-size: 1.2em;
+}
+
+.prose p,
+.prose ul,
+.prose ol,
+.prose blockquote,
+.prose pre,
+.prose table {
+  margin: 0 0 1.1em;
+}
+
+.prose a {
+  color: var(--accent);
+}
+
+.prose img {
+  max-width: 100%;
+  border-radius: var(--radius);
+}
+
+.prose blockquote {
+  padding-left: 16px;
+  border-left: 4px solid var(--border);
+  color: var(--text-muted);
+}
+
+.prose code {
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  background: var(--bg);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.85em;
+}
+
+.prose pre {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+.prose pre code {
+  padding: 0;
+  background: none;
+}
+
+.prose table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.prose th,
+.prose td {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+}
+
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 2em 0;
+}

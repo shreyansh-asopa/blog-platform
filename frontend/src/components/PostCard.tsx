@@ -1,12 +1,9 @@
+import { Link } from 'react-router'
 import type { PostSummary } from '../api/types'
+import { formatDate, plural } from '../lib/format'
 import { Avatar } from './Avatar'
+import { Icon } from './Icon'
 import styles from './PostCard.module.css'
-
-const dateFormat = new Intl.DateTimeFormat(undefined, {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-})
 
 export function PostCard({ post }: { post: PostSummary }) {
   const date = post.published_at ?? post.updated_at
@@ -18,17 +15,26 @@ export function PostCard({ post }: { post: PostSummary }) {
         <div>
           <div className={styles.author}>{post.author.username}</div>
           <time className="muted" dateTime={date}>
-            {dateFormat.format(new Date(date))}
+            {formatDate(date)}
           </time>
         </div>
       </header>
 
-      <h2 className={styles.title}>{post.title}</h2>
+      <h2 className={styles.title}>
+        {/* The link's ::after stretches over the whole card, so any click opens the post */}
+        <Link to={`/p/${post.slug}`} className={styles.link}>
+          {post.title}
+        </Link>
+      </h2>
       {post.excerpt && <p className={`muted ${styles.excerpt}`}>{post.excerpt}</p>}
 
       <footer className={`muted ${styles.stats}`}>
-        <span aria-label={`${post.like_count} likes`}>♥ {post.like_count}</span>
-        <span aria-label={`${post.comment_count} comments`}>💬 {post.comment_count}</span>
+        <span aria-label={plural(post.like_count, 'like')}>
+          <Icon name="heart" size={16} /> {post.like_count}
+        </span>
+        <span aria-label={plural(post.comment_count, 'comment')}>
+          <Icon name="comment" size={16} /> {post.comment_count}
+        </span>
       </footer>
     </article>
   )
