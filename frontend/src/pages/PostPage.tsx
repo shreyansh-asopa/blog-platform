@@ -47,7 +47,9 @@ export function PostPage() {
           <header className={styles.meta}>
             <Avatar name={p.author.username} size={40} />
             <div>
-              <div className={styles.author}>{p.author.username}</div>
+              <Link to={`/u/${p.author.username}`} className={styles.author}>
+                {p.author.username}
+              </Link>
               <time className="muted" dateTime={date}>
                 {p.published_at ? `Posted ${formatDate(date)}` : `Edited ${formatDate(date)}`}
               </time>

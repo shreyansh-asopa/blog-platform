@@ -15,6 +15,9 @@ class UserRepository:
     async def get_by_id(self, user_id: uuid.UUID) -> User | None:
         return await self.session.get(User, user_id)
 
+    async def get_by_username(self, username: str) -> User | None:
+        return await self.session.scalar(select(User).where(User.username == username))
+
     async def get_by_email_or_username(self, identifier: str) -> User | None:
         """Look up a user by either field, as typed into the login form."""
         query = select(User).where(

@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router'
 import { RequireAuth } from './auth/RequireAuth'
 import { Layout } from './components/Layout'
 import { AdminPage } from './pages/AdminPage'
+import { AuthorPage } from './pages/AuthorPage'
 import { EditorPage } from './pages/EditorPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
@@ -9,6 +10,7 @@ import { MyPostsPage } from './pages/MyPostsPage'
 import { NotFoundPage } from './pages/PlaceholderPage'
 import { PostPage } from './pages/PostPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { SearchPage } from './pages/SearchPage'
 
 export function App() {
   return (
@@ -19,6 +21,8 @@ export function App() {
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="p/:slug" element={<PostPage />} />
+        <Route path="u/:username" element={<AuthorPage />} />
+        <Route path="search" element={<SearchPage />} />
 
         <Route
           path="write"

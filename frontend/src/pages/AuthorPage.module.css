@@ -1,0 +1,33 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.profile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  padding: 28px;
+}
+
+.name {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.profile p {
+  margin: 4px 0 0;
+}
+
+.subheading {
+  margin: 8px 0 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 18px;
+}

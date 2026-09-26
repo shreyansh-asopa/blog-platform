@@ -10,6 +10,7 @@ import type {
   PostRead,
   PostStatus,
   PostSummary,
+  Profile,
   Role,
   Token,
   User,
@@ -28,7 +29,9 @@ export const authApi = {
 }
 
 export const postsApi = {
-  feed: (page = 1, size = 20) => api<Page<PostSummary>>(`/posts?page=${page}&size=${size}`),
+  /** `q` searches (best match first); `author` is a username */
+  feed: (page = 1, size = 20, filters: { q?: string; author?: string } = {}) =>
+    api<Page<PostSummary>>(`/posts${query({ page, size, ...filters })}`),
   bySlug: (slug: string) => api<PostDetail>(`/posts/${encodeURIComponent(slug)}`),
   like: (postId: string) => api<LikeStatus>(`/posts/${postId}/like`, { method: 'PUT' }),
   unlike: (postId: string) => api<LikeStatus>(`/posts/${postId}/like`, { method: 'DELETE' }),
@@ -73,6 +76,10 @@ function query(params: Record<string, string | number | undefined>): string {
     if (value !== undefined && value !== '') search.set(key, String(value))
   }
   return `?${search}`
+}
+
+export const usersApi = {
+  profile: (username: string) => api<Profile>(`/users/${encodeURIComponent(username)}`),
 }
 
 export const adminApi = {

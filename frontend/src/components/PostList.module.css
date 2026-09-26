@@ -1,0 +1,21 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* The previous page stays visible, dimmed, while the next one loads */
+.list[aria-busy='true'] {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.empty {
+  padding: 32px;
+  text-align: center;
+}
+
+.empty p {
+  margin: 0 0 8px;
+}

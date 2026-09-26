@@ -36,8 +36,10 @@ class PostService:
 
     # --- Reading ---
 
-    async def list_published(self, params: PageParams) -> tuple[list[Post], int]:
-        return await self.posts.list_published(params)
+    async def list_published(
+        self, params: PageParams, search: str | None = None, author: str | None = None
+    ) -> tuple[list[Post], int]:
+        return await self.posts.list_published(params, search, author)
 
     async def list_mine(
         self, user: User, params: PageParams, status: PostStatus | None

@@ -29,3 +29,12 @@ class UserRead(BaseModel):
     role: UserRole
     is_active: bool
     created_at: datetime
+
+
+class ProfileRead(BaseModel):
+    """What anyone can see about an author. No email: that stays private."""
+
+    id: uuid.UUID
+    username: str
+    created_at: datetime
+    post_count: int = Field(description="Published posts only")
