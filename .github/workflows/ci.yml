@@ -1,0 +1,92 @@
+# Runs on every pull request and every push to main. A PR should only be merged when
+# this is green: lint, formatting, migrations and all tests pass on a fresh machine.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# The workflow only needs to read the code; nothing it runs can push or change settings
+permissions:
+  contents: read
+
+# A new push to the same PR cancels the run still going for the previous one
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint, migrations, tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+
+    # A throwaway Postgres just for this run, like the one in docker-compose.yml
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: blog
+          POSTGRES_PASSWORD: ci-password
+          POSTGRES_DB: blog_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U blog -d blog_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    # Settings come from environment variables here, as there is no .env file in CI.
+    # These values only exist inside this short-lived runner, so they aren't secrets
+    env:
+      POSTGRES_USER: blog
+      POSTGRES_PASSWORD: ci-password
+      POSTGRES_DB: blog_test
+      POSTGRES_TEST_DB: blog_test
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      JWT_SECRET: ci-only-secret-not-used-anywhere-else-0123456789
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10
+        with:
+          # Reuses downloaded packages between runs while uv.lock is unchanged
+          enable-cache: true
+          # Same Python as the Docker image (python:3.13-slim)
+          python-version: "3.13"
+
+      - name: Install dependencies
+        # --frozen: fail instead of changing uv.lock, so CI tests exactly what was committed
+        run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Check formatting
+        run: uv run ruff format --check .
+
+      - name: Check migrations match the models
+        # Fails if a model was changed without writing the matching migration
+        run: |
+          uv run alembic upgrade head
+          uv run alembic check
+
+      - name: Run tests
+        run: uv run pytest -q
+
+  docker:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build the API image
+        run: docker build --tag lumen-api:ci backend
