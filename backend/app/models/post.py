@@ -2,10 +2,11 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text, func, select
+from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 
 from app.db.base import Base, SoftDeleteMixin, TimestampMixin
+from app.models.like import Like
 from app.models.user import User
 
 
@@ -43,3 +44,9 @@ class Post(TimestampMixin, SoftDeleteMixin, Base):
     # Loaded in the same query as the post (a JOIN), so listing posts never
     # fires one extra query per post to fetch its author (the "N+1" problem)
     author: Mapped[User] = relationship(lazy="joined")
+
+    # Counted by a subquery inside the same SELECT that loads the post, so a page of
+    # 20 posts is still one query, not 21. Not a real column: nothing is stored
+    like_count: Mapped[int] = column_property(
+        select(func.count()).where(Like.post_id == id).correlate_except(Like).scalar_subquery()
+    )

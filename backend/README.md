@@ -42,11 +42,14 @@ uv run uvicorn app.main:app --reload
 | POST | `/api/v1/posts/{id}/publish` | Author or admin | Make a draft public |
 | POST | `/api/v1/posts/{id}/unpublish` | Author or admin | Turn it back into a draft |
 | DELETE | `/api/v1/posts/{id}` | Author or admin | Soft delete (hidden everywhere, kept in the database) |
+| PUT | `/api/v1/posts/{id}/like` | Bearer token | Like a published post (not your own); repeating is harmless |
+| DELETE | `/api/v1/posts/{id}/like` | Bearer token | Remove your like |
 | GET | `/api/v1/me/posts?status=` | Bearer token | Your own posts, drafts included; filter with `draft`/`published` |
 
 Post rules: the slug follows a draft's title but is frozen once published, so shared links
 keep working. The excerpt is generated from the content unless you set your own.
 Someone else's draft returns 404, so drafts can't be discovered.
+Every post includes `like_count`; `GET /posts/{slug}` also says `liked_by_me`.
 
 Try it in the browser at `/docs`: register, then click **Authorize**, log in, and call `/users/me`.
 

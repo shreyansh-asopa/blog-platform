@@ -4,7 +4,8 @@ from fastapi import APIRouter, status
 
 from app.api.deps import CurrentUser, DbSession, OptionalUser, Pagination
 from app.schemas.pagination import Page
-from app.schemas.post import PostCreate, PostRead, PostSummary, PostUpdate
+from app.schemas.post import PostCreate, PostDetail, PostRead, PostSummary, PostUpdate
+from app.services.like_service import LikeService
 from app.services.post_service import PostService
 
 router = APIRouter(prefix="/posts", tags=["posts"])
@@ -23,9 +24,11 @@ async def list_posts(db: DbSession, params: Pagination) -> Page[PostSummary]:
 
 
 @router.get("/{slug}")
-async def read_post(slug: str, db: DbSession, viewer: OptionalUser) -> PostRead:
+async def read_post(slug: str, db: DbSession, viewer: OptionalUser) -> PostDetail:
     """Anyone can read a published post. Drafts are visible only to their author."""
-    return PostRead.model_validate(await PostService(db).get_by_slug(slug, viewer))
+    post = await PostService(db).get_by_slug(slug, viewer)
+    liked = await LikeService(db).has_liked(viewer, post)
+    return PostDetail(**PostRead.model_validate(post).model_dump(), liked_by_me=liked)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
