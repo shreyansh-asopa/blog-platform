@@ -107,6 +107,21 @@ Export: the CSV is streamed in batches, so even a large export never sits in mem
 once. Cells that a spreadsheet would run as a formula (starting with `=`, `+`, `-`, `@`) are
 prefixed with `'`, and the file starts with a UTF-8 byte-order mark so Excel reads accents.
 
+## Every request
+
+- **Request id**: each response has an `X-Request-ID` header (send your own to keep it),
+  also found in every error body and log line, so one request can be traced end to end.
+- **Errors** always look like `{"error": {"code", "message", "request_id"}}`. Validation
+  errors (422 `validation_error`) add `details: [{"field", "message"}]`. Crashes are a
+  500 `internal_error` without any internal details; the traceback goes to the log.
+- **Logs** are JSON lines (`LOG_FORMAT=console` for a terminal), one per request with
+  method, path, status and duration. Successful health checks are not logged.
+- **CORS**: only the origins in `CORS_ORIGINS` may call the API from a browser.
+- **GZip** for responses over 1 KB.
+- **Rate limits** (429 `rate_limited` with `Retry-After`): 5 login attempts per minute per
+  IP address and username, 10 comments per minute per user. Counts are kept in memory,
+  so they are per process and reset on restart.
+
 Admins and the audit log: the role is read from the database on every request, so promoting
 or demoting someone takes effect at once, even with a token they already have. Role changes,
 every post or comment deletion, and admins editing or (un)publishing someone else's post are

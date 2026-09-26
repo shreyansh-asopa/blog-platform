@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.api.deps import AppSettings, DbSession
+from app.api.deps import AppSettings, DbSession, limit_login_attempts
 from app.schemas.auth import Token
 from app.schemas.user import UserCreate, UserRead
 from app.services.auth_service import AuthService
@@ -17,7 +17,7 @@ async def register(data: UserCreate, db: DbSession, settings: AppSettings) -> Us
     return UserRead.model_validate(user)
 
 
-@router.post("/login")
+@router.post("/login", dependencies=[Depends(limit_login_attempts)])
 async def login(
     form: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: DbSession,
