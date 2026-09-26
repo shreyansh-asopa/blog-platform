@@ -1,0 +1,148 @@
+.shell {
+  min-height: 100vh;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: var(--topbar-height);
+  padding: 0 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 20px;
+  font-weight: 800;
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+
+.logo span {
+  color: var(--accent);
+}
+
+.search {
+  flex: 1;
+  max-width: 420px;
+  min-width: 0;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 24px;
+  /* Sidebar + gap + the 720px reading column, so the whole page sits centred */
+  max-width: calc(200px + 24px + 720px + 32px);
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.sidebar {
+  position: sticky;
+  top: calc(var(--topbar-height) + 24px);
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  text-decoration: none;
+}
+
+.navLink:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.active {
+  background: var(--surface);
+  font-weight: 600;
+}
+
+.main {
+  min-width: 0;
+  max-width: 720px;
+}
+
+/* Phones and small tablets: the sidebar becomes a row of links above the content */
+@media (max-width: 768px) {
+  .search,
+  .username {
+    display: none;
+  }
+
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .sidebar {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .navLink {
+    white-space: nowrap;
+  }
+}
+
+.narrow {
+  display: none;
+}
+
+/* Phones: tighter top bar so the buttons fit */
+@media (max-width: 480px) {
+  .topbar {
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .actions {
+    gap: 2px;
+  }
+
+  .actions :global(.btn) {
+    padding: 6px 10px;
+  }
+
+  .wide {
+    display: none;
+  }
+
+  .narrow {
+    display: inline;
+  }
+}

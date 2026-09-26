@@ -1,0 +1,15 @@
+.error {
+  padding: 10px 14px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.ref {
+  margin-top: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  opacity: 0.8;
+}
