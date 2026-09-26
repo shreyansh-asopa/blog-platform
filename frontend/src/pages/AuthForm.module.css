@@ -1,0 +1,54 @@
+.panel {
+  max-width: 420px;
+  margin: 24px auto;
+  padding: 32px;
+}
+
+.heading {
+  margin: 0 0 4px;
+  font-size: 28px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.field input {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  font-weight: 400;
+}
+
+.field input[aria-invalid] {
+  border-color: var(--danger);
+}
+
+.field small {
+  font-weight: 400;
+}
+
+.fieldError {
+  color: var(--danger);
+}
+
+.switch {
+  margin: 24px 0 0;
+  text-align: center;
+  font-size: 14px;
+}
+
+.switch a {
+  color: var(--accent);
+}

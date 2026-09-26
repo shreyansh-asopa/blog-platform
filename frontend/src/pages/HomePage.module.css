@@ -1,0 +1,10 @@
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty {
+  padding: 32px;
+  text-align: center;
+}
