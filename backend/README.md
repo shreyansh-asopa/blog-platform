@@ -48,6 +48,8 @@ uv run uvicorn app.main:app --reload
 | POST | `/api/v1/posts/{id}/comments` | Bearer token | Comment on a published post (JSON: `content`) |
 | DELETE | `/api/v1/comments/{id}` | Comment author, post author or admin | Soft delete a comment |
 | GET | `/api/v1/me/posts?status=` | Bearer token | Your own posts, drafts included; filter with `draft`/`published` |
+| PATCH | `/api/v1/admin/users/{id}/role` | Admin | Make a user `admin` or `user` (JSON: `role`); not your own |
+| GET | `/api/v1/admin/audit-logs?action=&actor_id=&page=&size=` | Admin | Who did what, newest first |
 
 Post rules: the slug follows a draft's title but is frozen once published, so shared links
 keep working. The excerpt is generated from the content unless you set your own.
@@ -89,4 +91,16 @@ such as dropping Postgres enum types in `downgrade()`.
 uv run pytest                    # tests (needs the db container running)
 uv run ruff check .              # lint
 uv run ruff format .             # auto-format
+```
+
+Admins and the audit log: the role is read from the database on every request, so promoting
+or demoting someone takes effect at once, even with a token they already have. Role changes,
+every post or comment deletion, and admins editing or (un)publishing someone else's post are
+recorded in `audit_logs`, in the same transaction as the change itself. Entries survive the
+deletion of the user who acted (`actor` becomes `null`). The first admin has to be made by hand:
+
+```bash
+docker compose exec db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+# then, at the psql prompt:
+UPDATE users SET role = 'admin' WHERE username = 'you';
 ```

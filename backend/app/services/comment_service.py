@@ -6,8 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ContentRejectedError, NotFoundError, PermissionDeniedError
 from app.integrations.moderation import ModerationUnavailableError, Moderator
-from app.models import Comment, Post, PostStatus, User
+from app.models import AuditAction, Comment, Post, PostStatus, User
 from app.permissions import Permission, has_permission
+from app.repositories.audit_log_repository import AuditLogRepository
 from app.repositories.comment_repository import CommentRepository
 from app.repositories.post_repository import PostRepository
 from app.schemas.comment import CommentCreate
@@ -31,6 +32,7 @@ class CommentService:
         self.moderator = moderator
         self.comments = CommentRepository(session)
         self.posts = PostRepository(session)
+        self.audit = AuditLogRepository(session)
 
     async def list_for_post(
         self, post_id: uuid.UUID, viewer: User | None, params: PageParams
@@ -62,6 +64,13 @@ class CommentService:
         if not can_delete(user, comment, post):
             raise PermissionDeniedError("You can only delete your own comments")
         comment.deleted_at = datetime.now(UTC)
+        self.audit.record(
+            user,
+            AuditAction.COMMENT_DELETED,
+            "comment",
+            comment.id,
+            {"post_id": str(post.id), "author_id": str(comment.author_id)},
+        )
         await self.session.commit()
 
     async def _moderate(self, text: str) -> None:
