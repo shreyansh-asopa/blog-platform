@@ -1,5 +1,7 @@
 import { api, download } from './client'
 import type {
+  AuditAction,
+  AuditLog,
   Comment,
   LikeStatus,
   Page,
@@ -8,6 +10,7 @@ import type {
   PostRead,
   PostStatus,
   PostSummary,
+  Role,
   Token,
   User,
 } from './types'
@@ -61,4 +64,22 @@ export const commentsApi = {
   create: (postId: string, content: string) =>
     api<Comment>(`/posts/${postId}/comments`, { method: 'POST', body: { content } }),
   remove: (commentId: string) => api<void>(`/comments/${commentId}`, { method: 'DELETE' }),
+}
+
+/** Builds "?a=1&b=2", leaving out empty values */
+function query(params: Record<string, string | number | undefined>): string {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== '') search.set(key, String(value))
+  }
+  return `?${search}`
+}
+
+export const adminApi = {
+  users: (page = 1, size = 20, search?: string, role?: Role) =>
+    api<Page<User>>(`/admin/users${query({ page, size, search, role })}`),
+  setRole: (userId: string, role: Role) =>
+    api<User>(`/admin/users/${userId}/role`, { method: 'PATCH', body: { role } }),
+  auditLogs: (page = 1, size = 20, action?: AuditAction) =>
+    api<Page<AuditLog>>(`/admin/audit-logs${query({ page, size, action })}`),
 }

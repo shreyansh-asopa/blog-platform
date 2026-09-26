@@ -1,11 +1,12 @@
 import { Route, Routes } from 'react-router'
 import { RequireAuth } from './auth/RequireAuth'
 import { Layout } from './components/Layout'
+import { AdminPage } from './pages/AdminPage'
 import { EditorPage } from './pages/EditorPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { MyPostsPage } from './pages/MyPostsPage'
-import { NotFoundPage, PlaceholderPage } from './pages/PlaceholderPage'
+import { NotFoundPage } from './pages/PlaceholderPage'
 import { PostPage } from './pages/PostPage'
 import { RegisterPage } from './pages/RegisterPage'
 
@@ -55,7 +56,15 @@ export function App() {
           path="admin"
           element={
             <RequireAuth role="admin">
-              <PlaceholderPage title="Admin" />
+              <AdminPage section="users" />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="admin/audit"
+          element={
+            <RequireAuth role="admin">
+              <AdminPage section="audit" />
             </RequireAuth>
           }
         />

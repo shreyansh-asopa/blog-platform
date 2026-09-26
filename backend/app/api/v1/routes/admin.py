@@ -1,10 +1,10 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import DbSession, Pagination, require_permission
-from app.models import AuditAction, User
+from app.models import AuditAction, User, UserRole
 from app.permissions import Permission
 from app.schemas.admin import AuditLogRead, RoleUpdate
 from app.schemas.pagination import Page
@@ -15,6 +15,24 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 UserManager = Annotated[User, Depends(require_permission(Permission.MANAGE_USERS))]
 AuditViewer = Annotated[User, Depends(require_permission(Permission.VIEW_AUDIT_LOG))]
+
+
+@router.get("/users")
+async def list_users(
+    db: DbSession,
+    _: UserManager,
+    params: Pagination,
+    search: Annotated[str | None, Query(max_length=100)] = None,
+    role: UserRole | None = None,
+) -> Page[UserRead]:
+    """Newest accounts first. ?search= matches part of a username or email; ?role=admin."""
+    users, total = await AdminService(db).list_users(params, search, role)
+    return Page(
+        items=[UserRead.model_validate(u) for u in users],
+        total=total,
+        page=params.page,
+        size=params.size,
+    )
 
 
 @router.patch("/users/{user_id}/role")

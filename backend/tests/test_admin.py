@@ -184,3 +184,53 @@ async def _delete_user(settings, username: str) -> None:
     async with engine.begin() as conn:
         await conn.execute(text("DELETE FROM users WHERE username = :u"), {"u": username})
     await engine.dispose()
+
+
+# --- Listing users ---
+
+
+def list_users(client: TestClient, admin, **params) -> dict:
+    response = client.get(f"{ADMIN}/users", params=params, headers=admin.headers)
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def test_only_admins_can_list_users(client: TestClient, ada):
+    assert client.get(f"{ADMIN}/users", headers=ada.headers).status_code == 403
+    assert client.get(f"{ADMIN}/users").status_code == 401
+
+
+def test_users_are_listed_newest_first(client: TestClient, admin, ada, grace):
+    page = list_users(client, admin)
+
+    assert [u["username"] for u in page["items"]] == ["grace", "ada", "root"]
+    assert page["total"] == 3
+    # Never the password hash
+    assert "hashed_password" not in page["items"][0]
+
+
+def test_search_matches_part_of_a_username_or_email_in_any_case(
+    client: TestClient, admin, ada, grace
+):
+    assert [u["username"] for u in list_users(client, admin, search="GRA")["items"]] == ["grace"]
+    by_email = list_users(client, admin, search="ada@example")["items"]
+    assert [u["username"] for u in by_email] == ["ada"]
+    assert list_users(client, admin, search="nobody")["total"] == 0
+
+
+def test_search_treats_like_wildcards_as_plain_text(client: TestClient, admin, make_user):
+    make_user("a_b")
+    make_user("axb")
+
+    # Unescaped, "_" would match any character and find axb too
+    assert [u["username"] for u in list_users(client, admin, search="a_b")["items"]] == ["a_b"]
+    assert list_users(client, admin, search="%")["total"] == 0
+
+
+def test_users_can_be_filtered_by_role_and_paged(client: TestClient, admin, ada, grace):
+    admins = list_users(client, admin, role="admin")
+    assert [u["username"] for u in admins["items"]] == ["root"]
+
+    page = list_users(client, admin, size=2, page=2)
+    assert [u["username"] for u in page["items"]] == ["root"]
+    assert page["total"] == 3

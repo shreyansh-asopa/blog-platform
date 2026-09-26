@@ -15,6 +15,11 @@ class AdminService:
         self.users = UserRepository(session)
         self.audit = AuditLogRepository(session)
 
+    async def list_users(
+        self, params: PageParams, search: str | None, role: UserRole | None
+    ) -> tuple[list[User], int]:
+        return await self.users.list(params, search, role)
+
     async def change_role(self, admin: User, user_id: uuid.UUID, role: UserRole) -> User:
         # Also guarantees at least one admin is always left: the one making changes
         if user_id == admin.id:
