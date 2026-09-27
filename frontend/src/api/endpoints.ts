@@ -13,6 +13,7 @@ import type {
   Profile,
   Role,
   Token,
+  TopicDetail,
   User,
 } from './types'
 
@@ -29,8 +30,8 @@ export const authApi = {
 }
 
 export const postsApi = {
-  /** `q` searches (best match first); `author` is a username */
-  feed: (page = 1, size = 20, filters: { q?: string; author?: string } = {}) =>
+  /** `q` searches (best match first); `author` is a username; `topic` is a topic slug */
+  feed: (page = 1, size = 20, filters: { q?: string; author?: string; topic?: string } = {}) =>
     api<Page<PostSummary>>(`/posts${query({ page, size, ...filters })}`),
   bySlug: (slug: string) => api<PostDetail>(`/posts/${encodeURIComponent(slug)}`),
   like: (postId: string) => api<LikeStatus>(`/posts/${postId}/like`, { method: 'PUT' }),
@@ -76,6 +77,12 @@ function query(params: Record<string, string | number | undefined>): string {
     if (value !== undefined && value !== '') search.set(key, String(value))
   }
   return `?${search}`
+}
+
+export const topicsApi = {
+  /** Every topic, in sidebar order, with its published post count */
+  list: () => api<TopicDetail[]>('/topics'),
+  get: (slug: string) => api<TopicDetail>(`/topics/${encodeURIComponent(slug)}`),
 }
 
 export const usersApi = {

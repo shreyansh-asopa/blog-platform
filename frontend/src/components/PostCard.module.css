@@ -1,6 +1,27 @@
 .card {
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
   padding: 20px 24px;
+}
+
+/* The cover sits beside the text, as a thumbnail */
+.card[data-cover='true'] {
+  grid-template-columns: minmax(0, 1fr) 200px;
+}
+
+.body {
+  min-width: 0;
+}
+
+.cover {
+  width: 200px;
+  aspect-ratio: 1.91;
+  align-self: center;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--surface-hover);
 }
 
 .card:hover {
@@ -58,10 +79,25 @@
   overflow: hidden;
 }
 
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 14px;
+}
+
+/* Above the card-wide link, like the author */
+.tags {
+  position: relative;
+  z-index: 1;
+}
+
 .stats {
   display: flex;
   gap: 16px;
-  margin-top: 12px;
+  margin-left: auto;
   font-size: 14px;
 }
 
@@ -69,4 +105,18 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+/* On phones the cover goes on top, full width */
+@media (max-width: 600px) {
+  .card[data-cover='true'] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding-top: 16px;
+  }
+
+  .cover {
+    order: -1;
+    width: 100%;
+  }
 }

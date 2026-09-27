@@ -49,6 +49,11 @@ class ContentRejectedError(AppError):
     code = "content_rejected"
 
 
+class UnknownTopicError(AppError):
+    status_code = 422
+    code = "unknown_topic"
+
+
 class FileTooLargeError(AppError):
     status_code = 413
     code = "file_too_large"

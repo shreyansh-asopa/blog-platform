@@ -43,6 +43,12 @@
   outline: none;
 }
 
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .tips p {
   margin: 0 0 8px;
 }

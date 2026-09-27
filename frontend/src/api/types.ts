@@ -39,10 +39,24 @@ export interface Author {
 
 export type PostStatus = 'draft' | 'published'
 
+/** A subject posts are filed under. The list is fixed; see GET /topics */
+export interface Topic {
+  slug: string
+  name: string
+}
+
+export interface TopicDetail extends Topic {
+  description: string
+  /** Published posts only */
+  post_count: number
+}
+
 /** What you send to create or edit a post */
 export interface PostInput {
   title: string
   content: string
+  /** Topic slugs, at most three */
+  topics: string[]
 }
 
 export interface PostSummary {
@@ -56,6 +70,7 @@ export interface PostSummary {
   created_at: string
   updated_at: string
   author: Author
+  topics: Topic[]
   like_count: number
   comment_count: number
 }

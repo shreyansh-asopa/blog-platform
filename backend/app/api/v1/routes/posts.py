@@ -29,9 +29,10 @@ async def list_posts(
         Query(max_length=200, description='Search words. Supports "phrases", or, -exclude'),
     ] = None,
     author: Annotated[str | None, Query(max_length=50, description="A username")] = None,
+    topic: Annotated[str | None, Query(max_length=40, description="A topic slug")] = None,
 ) -> Page[PostSummary]:
     """The public feed: published posts, newest first. With `q`, best matches first."""
-    posts, total = await PostService(db).list_published(params, q, author)
+    posts, total = await PostService(db).list_published(params, q, author, topic)
     return Page(
         items=[PostSummary.model_validate(p) for p in posts],
         total=total,
