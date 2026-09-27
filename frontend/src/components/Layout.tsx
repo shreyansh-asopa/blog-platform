@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Link, NavLink, Outlet } from 'react-router'
+import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { useTopics } from '../api/useTopics'
 import { useAuth } from '../auth/useAuth'
+import { searchParams, topicsIn } from '../lib/search'
 import { useTheme, type ThemeChoice } from '../theme/useTheme'
 import { Avatar } from './Avatar'
 import { Icon, type IconName } from './Icon'
@@ -35,6 +36,25 @@ export function Layout() {
   // On phones the sidebar is a drawer that slides in over the page
   const [menuOpen, setMenuOpen] = useState(false)
   const close = () => setMenuOpen(false)
+  const { pathname } = useLocation()
+  const [params] = useSearchParams()
+  const navigate = useNavigate()
+  // Topics fold away behind one button, and start open on a topic page so the current one shows
+  const [topicsOpen, setTopicsOpen] = useState(pathname.startsWith('/t/'))
+
+  // The ticked topics live in the search page's URL. On a topic page that topic counts as
+  // ticked, so ticking another searches both.
+  const onSearch = pathname === '/search'
+  const ticked = onSearch
+    ? topicsIn(params)
+    : pathname.startsWith('/t/')
+      ? [decodeURIComponent(pathname.slice(3)).toLowerCase()]
+      : []
+  function tick(slug: string, on: boolean) {
+    const next = on ? [...ticked, slug] : ticked.filter((s) => s !== slug)
+    // Keeps any search words, and starts again from page 1
+    navigate(`/search?${searchParams(onSearch ? (params.get('q') ?? '') : '', next)}`)
+  }
 
   const navClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? `${styles.navLink} ${styles.active}` : styles.navLink
@@ -103,21 +123,56 @@ export function Layout() {
 
         {/* Hidden until loaded, and if it fails: the rest of the sidebar still works */}
         {topics.data && topics.data.length > 0 && (
-          <nav className={styles.topics} aria-labelledby="topics-heading" onClick={close}>
-            <h2 id="topics-heading" className={styles.sectionHeading}>
-              Topics
-            </h2>
-            {topics.data.map((topic) => (
-              <NavLink key={topic.slug} to={`/t/${topic.slug}`} className={navClass}>
-                <TopicDot slug={topic.slug} />
-                <span className={styles.topicName}>{topic.name}</span>
-                <span className={styles.count}>
-                  {topic.post_count}
-                  <span className="visually-hidden"> posts</span>
-                </span>
-              </NavLink>
-            ))}
-          </nav>
+          <div className={styles.topics}>
+            <button
+              className={styles.navLink}
+              onClick={() => setTopicsOpen((open) => !open)}
+              aria-expanded={topicsOpen}
+              aria-controls="topics-list"
+            >
+              <Icon name="tag" /> <span className={styles.topicName}>Topics</span>
+              <span className={styles.chevron} data-open={topicsOpen}>
+                <Icon name="chevronDown" size={18} />
+              </span>
+            </button>
+            {topicsOpen && (
+              <div id="topics-list" className={styles.topicList}>
+                <p className={styles.topicHint}>Tick topics to search them together</p>
+                {/* Ticking doesn't close the phone drawer, so you can pick several */}
+                <nav aria-label="Topics">
+                  {topics.data.map((topic) => (
+                    <div key={topic.slug} className={styles.topicRow}>
+                      <input
+                        type="checkbox"
+                        className={styles.tick}
+                        checked={ticked.includes(topic.slug)}
+                        onChange={(event) => tick(topic.slug, event.target.checked)}
+                        aria-label={`Search ${topic.name}`}
+                      />
+                      <NavLink
+                        to={`/t/${topic.slug}`}
+                        className={navClass}
+                        title={topic.name}
+                        onClick={close}
+                      >
+                        <TopicDot slug={topic.slug} />
+                        <span className={styles.topicName}>{topic.name}</span>
+                        <span className={styles.count}>
+                          {topic.post_count}
+                          <span className="visually-hidden"> posts</span>
+                        </span>
+                      </NavLink>
+                    </div>
+                  ))}
+                </nav>
+                {ticked.length > 1 && (
+                  <button className={styles.clear} onClick={() => navigate('/search')}>
+                    Clear {ticked.length} topics
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
 
         <div className={styles.sidebarBottom}>

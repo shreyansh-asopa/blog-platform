@@ -34,20 +34,21 @@ class PostRepository:
         params: PageParams,
         search: str | None = None,
         author: str | None = None,
-        topic: str | None = None,
+        topics: list[str] | None = None,
     ) -> tuple[list[Post], int]:
         """Newest first, or best match first when searching.
 
         `search` takes what people type into search boxes: `"exact phrase"`, `or`, and
-        `-word` to exclude. `author` is a username and `topic` a topic slug; an unknown
-        one just matches nothing.
+        `-word` to exclude. `author` is a username. `topics` are topic slugs, and a post
+        in any of them matches. Unknown names just match nothing.
         """
         query = _visible().where(Post.status == PostStatus.PUBLISHED)
         order_by = [Post.published_at.desc(), Post.id]
         if author:
             query = query.where(Post.author_id.in_(select(User.id).where(username_is(author))))
-        if topic:
-            tagged = select(post_topics.c.post_id).where(post_topics.c.topic_slug == topic.lower())
+        if topics:
+            slugs = {slug.lower() for slug in topics}
+            tagged = select(post_topics.c.post_id).where(post_topics.c.topic_slug.in_(slugs))
             query = query.where(Post.id.in_(tagged))
         if search := (search or "").strip():
             # websearch_to_tsquery never fails on odd input, unlike to_tsquery

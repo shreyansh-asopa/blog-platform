@@ -30,9 +30,12 @@ export const authApi = {
 }
 
 export const postsApi = {
-  /** `q` searches (best match first); `author` is a username; `topic` is a topic slug */
-  feed: (page = 1, size = 20, filters: { q?: string; author?: string; topic?: string } = {}) =>
-    api<Page<PostSummary>>(`/posts${query({ page, size, ...filters })}`),
+  /** `q` searches (best match first); `author` is a username; a post in any of `topics` matches */
+  feed: (
+    page = 1,
+    size = 20,
+    { topics, ...filters }: { q?: string; author?: string; topics?: string[] } = {},
+  ) => api<Page<PostSummary>>(`/posts${query({ page, size, ...filters, topic: topics })}`),
   bySlug: (slug: string) => api<PostDetail>(`/posts/${encodeURIComponent(slug)}`),
   like: (postId: string) => api<LikeStatus>(`/posts/${postId}/like`, { method: 'PUT' }),
   unlike: (postId: string) => api<LikeStatus>(`/posts/${postId}/like`, { method: 'DELETE' }),
@@ -71,10 +74,13 @@ export const commentsApi = {
 }
 
 /** Builds "?a=1&b=2", leaving out empty values */
-function query(params: Record<string, string | number | undefined>): string {
+/** A list repeats its key: `topic=a&topic=b` */
+function query(params: Record<string, string | number | string[] | undefined>): string {
   const search = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== '') search.set(key, String(value))
+    for (const item of Array.isArray(value) ? value : [value]) {
+      if (item !== undefined && item !== '') search.append(key, String(item))
+    }
   }
   return `?${search}`
 }

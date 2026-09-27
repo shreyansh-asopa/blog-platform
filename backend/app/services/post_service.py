@@ -44,9 +44,9 @@ class PostService:
         params: PageParams,
         search: str | None = None,
         author: str | None = None,
-        topic: str | None = None,
+        topics: list[str] | None = None,
     ) -> tuple[list[Post], int]:
-        return await self.posts.list_published(params, search, author, topic)
+        return await self.posts.list_published(params, search, author, topics)
 
     async def list_mine(
         self, user: User, params: PageParams, status: PostStatus | None

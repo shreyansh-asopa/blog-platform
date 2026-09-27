@@ -61,25 +61,79 @@
   gap: 2px;
 }
 
+/* Sits right under the main links, as one more item */
 .topics {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+  margin-top: 2px;
 }
 
-.topics .navLink {
-  padding-block: 7px;
+/* The topic links, indented under their button */
+.topicList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: 21px;
+  padding-left: 4px;
+  border-left: 1px solid var(--border);
+}
+
+.topicHint {
+  margin: 2px 0 4px;
+  padding-left: 8px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.topicRow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tick {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0 0 0 8px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.topicRow .navLink {
+  gap: 10px;
+  padding: 7px 8px;
   font-size: 14px;
 }
 
-.sectionHeading {
-  margin: 0 0 6px;
-  padding: 0 12px;
-  color: var(--text-muted);
-  font-size: 12px;
+.clear {
+  align-self: flex-start;
+  margin: 4px 0 0 8px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.clear:hover {
+  text-decoration: underline;
+}
+
+.chevron {
+  display: flex;
+  color: var(--text-muted);
+  transition: transform 0.15s;
+}
+
+.chevron[data-open='true'] {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
 }
 
 .topicName {

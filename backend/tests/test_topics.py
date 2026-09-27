@@ -161,3 +161,20 @@ def test_topic_filter_combines_with_search(client: TestClient, ada):
     )
 
     assert feed(client, q="pipelines", topic="genai") == ["Pipelines for LLMs"]
+
+
+def test_feed_filters_by_several_topics(client: TestClient, ada):
+    publish(client, ada, create_post(client, ada, title="Lisbon", topics=["travel"]))
+    publish(client, ada, create_post(client, ada, title="Sourdough", topics=["food"]))
+    publish(client, ada, create_post(client, ada, title="Tapas trail", topics=["travel", "food"]))
+    publish(client, ada, create_post(client, ada, title="Budgeting", topics=["personal-finance"]))
+
+    # A post in any of the topics matches, and one in both shows once
+    assert sorted(feed(client, topic=["travel", "FOOD"])) == ["Lisbon", "Sourdough", "Tapas trail"]
+    assert feed(client, topic=["travel", "astrology"], q="lisbon") == ["Lisbon"]
+
+
+def test_at_most_twenty_topic_filters(client: TestClient):
+    response = client.get(POSTS, params={"topic": ["ai"] * 21})
+
+    assert response.status_code == 422

@@ -22,7 +22,7 @@ export function TopicPage() {
   // Fetched alongside the topic, not after it, so the page appears in one step
   const posts = useQuery({
     queryKey: ['posts', 'topic', slug, page],
-    queryFn: () => postsApi.feed(page, PAGE_SIZE, { topic: slug }),
+    queryFn: () => postsApi.feed(page, PAGE_SIZE, { topics: [slug] }),
     placeholderData: keepPreviousData,
   })
 

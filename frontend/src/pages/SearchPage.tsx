@@ -9,46 +9,42 @@ import { Icon } from '../components/Icon'
 import { PostList } from '../components/PostList'
 import { TopicDot } from '../components/TopicTags'
 import { plural } from '../lib/format'
+import { searchParams, topicsIn } from '../lib/search'
 import styles from './SearchPage.module.css'
 
 const PAGE_SIZE = 10
 
-/** Builds the search URL's query, leaving out what's empty (and page 1) */
-function searchParams(q: string, topic: string, page = 1) {
-  const params: Record<string, string> = {}
-  if (q) params.q = q
-  if (topic) params.topic = topic
-  if (page > 1) params.page = String(page)
-  return params
-}
+// "Travel, Food & Cooking or Books & Reading"
+const anyOf = new Intl.ListFormat('en-GB', { type: 'disjunction' })
 
-/** /search?q=…&topic=…: published posts, best match first, optionally in one topic */
+/** /search?q=…&topic=…&topic=…: published posts, best match first, in any of the topics */
 export function SearchPage() {
   const [params, setParams] = useSearchParams()
   const q = (params.get('q') ?? '').trim()
-  const topic = (params.get('topic') ?? '').trim().toLowerCase()
+  const selected = topicsIn(params)
   const page = Math.max(1, Number(params.get('page')) || 1)
   const topics = useTopics()
-  const current = topics.data?.find((t) => t.slug === topic)
+  const names = (topics.data ?? []).filter((t) => selected.includes(t.slug)).map((t) => t.name)
 
   const results = useQuery({
-    queryKey: ['posts', 'search', q, topic, page],
-    queryFn: () => postsApi.feed(page, PAGE_SIZE, { q, topic }),
-    // A topic on its own lists that topic's posts, newest first
-    enabled: q !== '' || topic !== '',
+    queryKey: ['posts', 'search', q, selected, page],
+    queryFn: () => postsApi.feed(page, PAGE_SIZE, { q, topics: selected }),
+    // Topics on their own list their posts, newest first
+    enabled: q !== '' || selected.length > 0,
     placeholderData: keepPreviousData,
   })
 
+  const where = names.length ? ` in ${anyOf.format(names)}` : ''
+  // A string, so the effect below runs only when the title really changes
+  const what = q ? `${q}${where}` : anyOf.format(names)
   useEffect(() => {
-    const what = [q, current?.name].filter(Boolean).join(' in ')
     document.title = what ? `${what} · Search · Lumen` : 'Search · Lumen'
     return () => {
       document.title = 'Lumen'
     }
-  }, [q, current])
+  }, [what])
 
-  const href = (n: number) => `?${new URLSearchParams(searchParams(q, topic, n))}`
-  const where = current ? ` in ${current.name}` : ''
+  const href = (n: number) => `?${searchParams(q, selected, n)}`
 
   return (
     <div className={styles.page}>
@@ -60,23 +56,23 @@ export function SearchPage() {
         key={q}
         initial={q}
         // A new search is a new history entry, so Back returns to the previous one
-        onSearch={(next) => setParams(searchParams(next, topic))}
+        onSearch={(next) => setParams(searchParams(next, selected))}
       />
 
       {topics.data && (
         <TopicFilter
           topics={topics.data}
-          selected={topic}
-          // Picking a topic keeps the words, and starts again from page 1
+          selected={selected}
+          // Changing the topics keeps the words, and starts again from page 1
           onSelect={(next) => setParams(searchParams(q, next))}
         />
       )}
 
-      {q === '' && topic === '' ? (
+      {q === '' && selected.length === 0 ? (
         <div className={`muted ${styles.tips}`}>
           <p>
-            Searches the titles and text of every published post. Pick a topic above to narrow it
-            down, or to browse it. You can use:
+            Searches the titles and text of every published post. Pick topics above to narrow it
+            down, or to browse them. You can use:
           </p>
           <ul>
             <li>
@@ -108,7 +104,9 @@ export function SearchPage() {
               <>
                 <p>{q ? `No posts match “${q}”${where}.` : `No posts${where} yet.`}</p>
                 <p className="muted">
-                  {topic ? 'Try another topic, or all topics.' : 'Try fewer or different words.'}
+                  {selected.length
+                    ? 'Try other topics, or all topics.'
+                    : 'Try fewer or different words.'}
                 </p>
               </>
             }
@@ -153,30 +151,34 @@ function SearchForm({ initial, onSearch }: { initial: string; onSearch: (q: stri
 
 interface FilterProps {
   topics: TopicDetail[]
-  /** A topic slug, or '' for all topics */
-  selected: string
-  onSelect: (slug: string) => void
+  /** Topic slugs; none means all topics */
+  selected: string[]
+  onSelect: (slugs: string[]) => void
 }
 
-/** A row of topic toggles under the search box. One topic at a time; "All" clears it. */
+/** A row of topic toggles under the search box. Pick any number; "All" clears them. */
 function TopicFilter({ topics, selected, onSelect }: FilterProps) {
   return (
     <div className={styles.filter} role="group" aria-label="Filter by topic">
-      <button className="chip" aria-pressed={selected === ''} onClick={() => onSelect('')}>
+      <button className="chip" aria-pressed={selected.length === 0} onClick={() => onSelect([])}>
         All topics
       </button>
-      {topics.map((topic) => (
-        <button
-          key={topic.slug}
-          className="chip"
-          aria-pressed={selected === topic.slug}
-          // Clicking the chosen topic again turns the filter off
-          onClick={() => onSelect(selected === topic.slug ? '' : topic.slug)}
-        >
-          <TopicDot slug={topic.slug} />
-          {topic.name}
-        </button>
-      ))}
+      {topics.map((topic) => {
+        const on = selected.includes(topic.slug)
+        return (
+          <button
+            key={topic.slug}
+            className="chip"
+            aria-pressed={on}
+            onClick={() =>
+              onSelect(on ? selected.filter((s) => s !== topic.slug) : [...selected, topic.slug])
+            }
+          >
+            <TopicDot slug={topic.slug} />
+            {topic.name}
+          </button>
+        )
+      })}
     </div>
   )
 }
