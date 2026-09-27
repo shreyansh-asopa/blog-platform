@@ -4,7 +4,7 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
-from app.models import PostStatus
+from app.models import ContentFormat, PostStatus
 from app.schemas.topic import TopicRead
 
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
@@ -18,6 +18,8 @@ Topics = Annotated[list[TopicSlug], Field(max_length=3)]
 class PostCreate(BaseModel):
     title: Title
     content: Content
+    # The rich-text editor sends "html"; Markdown stays the default for older clients
+    content_format: ContentFormat = ContentFormat.MARKDOWN
     # Left out: generated from the content
     excerpt: Excerpt | None = None
     topics: Topics = []
@@ -28,13 +30,14 @@ class PostUpdate(BaseModel):
 
     title: Title | None = None
     content: Content | None = None
+    content_format: ContentFormat | None = None
     excerpt: Excerpt | None = None
     # Replaces the post's topics; send [] to clear them
     topics: Topics | None = None
 
     @model_validator(mode="after")
     def fields_cannot_be_null(self) -> Self:
-        for field in ("title", "content", "topics"):
+        for field in ("title", "content", "content_format", "topics"):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError(f"{field} cannot be null")
         return self
@@ -69,6 +72,7 @@ class PostSummary(BaseModel):
 
 class PostRead(PostSummary):
     content: str = Field(description="Full post body")
+    content_format: ContentFormat = Field(description="markdown, or html from the rich-text editor")
 
 
 class PostDetail(PostRead):

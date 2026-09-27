@@ -8,14 +8,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
     ConflictError,
+    EmptyContentError,
     NotFoundError,
     PermissionDeniedError,
     UnknownTopicError,
     UnsupportedFileTypeError,
 )
+from app.core.html import clean_html, html_to_text
 from app.core.text import make_excerpt, slugify
 from app.integrations.storage import Storage, detect_image_type
-from app.models import AuditAction, Post, PostStatus, Topic, User
+from app.models import AuditAction, ContentFormat, Post, PostStatus, Topic, User
 from app.permissions import Permission, has_permission
 from app.repositories.audit_log_repository import AuditLogRepository
 from app.repositories.post_repository import PostRepository
@@ -76,10 +78,11 @@ class PostService:
             author=user,
             title=data.title,
             slug=await self._unique_slug(data.title),
-            content=data.content,
-            excerpt=data.excerpt or make_excerpt(data.content),
+            content=_prepare(data.content, data.content_format),
+            content_format=data.content_format,
             topics=await self._topics(data.topics),
         )
+        post.excerpt = data.excerpt or _excerpt(post)
         await self.posts.add(post)
         return await self._save(post)
 
@@ -93,15 +96,16 @@ class PostService:
             if post.status is PostStatus.DRAFT and slugify(post.title) != post.slug:
                 post.slug = await self._unique_slug(post.title)
 
-        if "content" in changes:
+        if "content" in changes or "content_format" in changes:
             # Keep a generated excerpt in step with the content, but never touch a custom one
-            excerpt_was_generated = post.excerpt == make_excerpt(post.content)
-            post.content = changes["content"]
+            excerpt_was_generated = post.excerpt == _excerpt(post)
+            post.content_format = changes.get("content_format", post.content_format)
+            post.content = _prepare(changes.get("content", post.content), post.content_format)
             if excerpt_was_generated and "excerpt" not in changes:
-                post.excerpt = make_excerpt(post.content)
+                post.excerpt = _excerpt(post)
 
         if "excerpt" in changes:
-            post.excerpt = changes["excerpt"] or make_excerpt(post.content)
+            post.excerpt = changes["excerpt"] or _excerpt(post)
 
         if "topics" in changes:
             post.topics = await self._topics(changes["topics"])
@@ -227,3 +231,17 @@ class PostService:
         # Reload what the database set (updated_at) along with the author
         await self.session.refresh(post)
         return post
+
+
+def _prepare(content: str, content_format: ContentFormat) -> str:
+    """Cleans editor HTML; refuses content that is empty once cleaned, e.g. only a <script>."""
+    if content_format is not ContentFormat.HTML:
+        return content
+    cleaned = clean_html(content)
+    if not html_to_text(cleaned).strip():
+        raise EmptyContentError("The post has no text.")
+    return cleaned
+
+
+def _excerpt(post: Post) -> str:
+    return make_excerpt(post.content, html=post.content_format is ContentFormat.HTML)

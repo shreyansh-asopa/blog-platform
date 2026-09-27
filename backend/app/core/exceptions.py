@@ -49,6 +49,11 @@ class ContentRejectedError(AppError):
     code = "content_rejected"
 
 
+class EmptyContentError(AppError):
+    status_code = 422
+    code = "empty_content"
+
+
 class UnknownTopicError(AppError):
     status_code = 422
     code = "unknown_topic"

@@ -1,0 +1,204 @@
+/* One card: the toolbar on top, the writing area below */
+.editor {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.editor:focus-within {
+  border-color: var(--focus);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--surface);
+}
+
+/* A thin line between groups of related buttons */
+.group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 6px;
+  border-right: 1px solid var(--border);
+}
+
+.group:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+
+.select {
+  height: 32px;
+  padding: 0 2px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.select:hover {
+  background: var(--surface-hover);
+}
+
+.select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.tool {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font-family: ui-serif, Georgia, serif;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tool:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.tool[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tool:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.colorPicker {
+  position: relative;
+}
+
+.colorA {
+  padding: 0 2px;
+  border-bottom: 3px solid;
+  font-weight: 700;
+}
+
+.palette {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 28px);
+  gap: 6px;
+}
+
+.swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.swatch[aria-pressed='true'] {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.defaultColor {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.defaultColor[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* The writing area, styled like the published post so what you see is what readers get */
+.content {
+  min-height: 60vh;
+  padding: 20px 24px;
+  outline: none;
+}
+
+.content :global(p.is-editor-empty:first-child)::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--text-muted);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.content :global(table) {
+  display: table;
+  width: 100%;
+}
+
+.content :global(th),
+.content :global(td) {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+}
+
+.content :global(th p),
+.content :global(td p) {
+  margin: 0;
+}
+
+/* Phones: one row that scrolls sideways, instead of several rows of buttons */
+@media (max-width: 600px) {
+  .toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .group {
+    flex: none;
+  }
+
+  .content {
+    padding: 16px;
+  }
+
+  /* A sideways-scrolling toolbar would clip a palette hanging below it */
+  .palette {
+    position: fixed;
+    inset: auto 16px 16px;
+    align-items: center;
+  }
+
+  .swatches {
+    grid-template-columns: repeat(8, 28px);
+  }
+}

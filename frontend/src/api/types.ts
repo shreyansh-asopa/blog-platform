@@ -55,6 +55,8 @@ export interface TopicDetail extends Topic {
 export interface PostInput {
   title: string
   content: string
+  /** The editor always sends html; Markdown is what older posts were written in */
+  content_format?: ContentFormat
   /** Topic slugs, at most three */
   topics: string[]
 }
@@ -76,8 +78,11 @@ export interface PostSummary {
 }
 
 /** A post as its author gets it back after saving */
+export type ContentFormat = 'markdown' | 'html'
+
 export interface PostRead extends PostSummary {
   content: string
+  content_format: ContentFormat
 }
 
 export interface PostDetail extends PostRead {
