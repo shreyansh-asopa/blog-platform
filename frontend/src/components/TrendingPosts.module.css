@@ -1,0 +1,122 @@
+/* Stacked under the latest posts on smaller screens, a side panel on wide ones */
+.trending {
+  margin-top: 40px;
+  padding: 20px;
+}
+
+@media (min-width: 1280px) {
+  .trending {
+    position: sticky;
+    top: 24px;
+    margin-top: 0;
+  }
+}
+
+.header {
+  margin-bottom: 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header h2 {
+  margin: 0 0 2px;
+  font-size: 18px;
+}
+
+.header > span {
+  font-size: 13px;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 0;
+}
+
+.item + .item {
+  border-top: 1px solid var(--border);
+}
+
+.item:last-child {
+  padding-bottom: 0;
+}
+
+.item:hover .link {
+  color: var(--accent);
+}
+
+.rank {
+  flex-shrink: 0;
+  width: 2ch;
+  color: var(--accent);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.link {
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* Stretched over the whole row, so any click opens the post */
+.link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.meta,
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.meta {
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+/* Above the row-wide link, so it can be clicked on its own */
+.author {
+  position: relative;
+  z-index: 1;
+  color: inherit;
+  font-weight: 500;
+}
+
+.topic,
+.stats > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.topic {
+  gap: 6px;
+}

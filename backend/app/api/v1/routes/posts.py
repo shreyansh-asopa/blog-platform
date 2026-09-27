@@ -41,6 +41,15 @@ async def list_posts(
     )
 
 
+@router.get("/trending")
+async def trending_posts(
+    db: DbSession, limit: Annotated[int, Query(ge=1, le=20)] = 5
+) -> list[PostSummary]:
+    """The posts with the most likes and comments in the last 7 days."""
+    posts = await PostService(db).trending(limit)
+    return [PostSummary.model_validate(p) for p in posts]
+
+
 @router.get("/{slug}")
 async def read_post(slug: str, db: DbSession, viewer: OptionalUser) -> PostDetail:
     """Anyone can read a published post. Drafts are visible only to their author."""

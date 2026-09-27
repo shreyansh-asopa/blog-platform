@@ -33,6 +33,8 @@ export const postsApi = {
   /** `q` searches (best match first); `author` is a username; `topic` is a topic slug */
   feed: (page = 1, size = 20, filters: { q?: string; author?: string; topic?: string } = {}) =>
     api<Page<PostSummary>>(`/posts${query({ page, size, ...filters })}`),
+  /** Most likes and comments in the last 7 days */
+  trending: (limit = 5) => api<PostSummary[]>(`/posts/trending${query({ limit })}`),
   bySlug: (slug: string) => api<PostDetail>(`/posts/${encodeURIComponent(slug)}`),
   like: (postId: string) => api<LikeStatus>(`/posts/${postId}/like`, { method: 'PUT' }),
   unlike: (postId: string) => api<LikeStatus>(`/posts/${postId}/like`, { method: 'DELETE' }),
@@ -82,6 +84,8 @@ function query(params: Record<string, string | number | undefined>): string {
 export const topicsApi = {
   /** Every topic, in sidebar order, with its published post count */
   list: () => api<TopicDetail[]>('/topics'),
+  /** The topics with the most likes and comments on their posts this past week */
+  trending: (limit = 3) => api<TopicDetail[]>(`/topics/trending${query({ limit })}`),
   get: (slug: string) => api<TopicDetail>(`/topics/${encodeURIComponent(slug)}`),
 }
 

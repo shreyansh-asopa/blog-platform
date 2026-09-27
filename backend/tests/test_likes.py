@@ -3,6 +3,8 @@ import uuid
 import pytest
 from fastapi.testclient import TestClient
 
+from tests.test_posts import create_post, publish
+
 POSTS = "/api/v1/posts"
 
 
@@ -101,3 +103,49 @@ def test_post_page_says_whether_you_liked_it(client: TestClient, ada, grace, pos
     assert client.get(url, headers=grace.headers).json()["liked_by_me"] is True
     assert client.get(url, headers=ada.headers).json()["liked_by_me"] is False
     assert client.get(url).json()["liked_by_me"] is False
+
+
+# --- Trending posts ---
+
+
+def trending(client: TestClient, **params) -> list[str]:
+    response = client.get(f"{POSTS}/trending", params=params)
+    assert response.status_code == 200, response.text
+    return [p["title"] for p in response.json()]
+
+
+def test_trending_ranks_posts_by_recent_likes_and_comments(client: TestClient, ada, grace):
+    publish(client, ada, create_post(client, ada, title="Quiet"))
+    busy = publish(client, ada, create_post(client, ada, title="Busy"))
+    some = publish(client, ada, create_post(client, ada, title="Some"))
+    create_post(client, ada, title="Draft")
+    for user in (ada, grace):
+        like(client, user, busy)
+    client.post(f"{POSTS}/{busy['id']}/comments", json={"content": "Lovely"}, headers=grace.headers)
+    like(client, grace, some)
+
+    assert trending(client) == ["Busy", "Some", "Quiet"]
+    assert trending(client, limit=1) == ["Busy"]
+
+
+def test_trending_posts_ignore_old_likes(client: TestClient, ada, grace, monkeypatch):
+    from datetime import timedelta
+
+    from app.services import post_service
+
+    old = publish(client, ada, create_post(client, ada, title="Old hit"))
+    like(client, grace, old)
+    new = publish(client, ada, create_post(client, ada, title="New"))
+    # A zero-length window: every like happened before it started
+    monkeypatch.setattr(post_service, "TRENDING_WINDOW", timedelta(0))
+
+    # With no recent activity, all-time likes break the tie
+    assert trending(client) == ["Old hit", "New"]
+    like(client, ada, new)
+    like(client, grace, new)
+    assert trending(client) == ["New", "Old hit"]
+
+
+def test_trending_posts_limit_is_bounded(client: TestClient):
+    assert client.get(f"{POSTS}/trending", params={"limit": 0}).status_code == 422
+    assert client.get(f"{POSTS}/trending", params={"limit": 21}).status_code == 422

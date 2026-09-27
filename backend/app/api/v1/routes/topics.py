@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, Query
 
 from app.api.deps import DbSession
 from app.schemas.topic import TopicDetail
@@ -11,6 +13,14 @@ router = APIRouter(prefix="/topics", tags=["topics"])
 async def list_topics(db: DbSession) -> list[TopicDetail]:
     """Every topic, in display order, with its number of published posts."""
     return await TopicService(db).list()
+
+
+@router.get("/trending")
+async def trending_topics(
+    db: DbSession, limit: Annotated[int, Query(ge=1, le=20)] = 3
+) -> list[TopicDetail]:
+    """The topics with the most likes and comments on their posts in the last 7 days."""
+    return await TopicService(db).trending(limit)
 
 
 @router.get("/{slug}")
