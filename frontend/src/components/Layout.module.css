@@ -26,16 +26,31 @@
 
 .logo {
   display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-decoration: none;
+}
+
+.wordmark {
+  display: flex;
   align-items: center;
   gap: 6px;
   font-size: 22px;
   font-weight: 800;
-  text-decoration: none;
   letter-spacing: -0.03em;
 }
 
-.logo span {
+.wordmark span {
   color: var(--accent);
+}
+
+/* Small, but in the muted text colour, which keeps good contrast in both themes */
+.tagline {
+  padding-left: 1px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 .nav,

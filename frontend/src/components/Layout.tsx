@@ -14,10 +14,16 @@ const THEMES: Record<ThemeChoice, { icon: IconName; label: string }> = {
   dark: { icon: 'moon', label: 'Dark theme' },
 }
 
-function Logo() {
+const TAGLINE = 'Ideas, brought to light'
+
+/** The tagline shows only in the sidebar: the phone header bar is one line high */
+function Logo({ tagline = false }: { tagline?: boolean }) {
   return (
     <Link to="/" className={styles.logo}>
-      <span aria-hidden>✦</span> Lumen
+      <span className={styles.wordmark}>
+        <span aria-hidden>✦</span> Lumen
+      </span>
+      {tagline && <span className={styles.tagline}>{TAGLINE}</span>}
     </Link>
   )
 }
@@ -57,7 +63,7 @@ export function Layout() {
 
       <aside id="sidebar" className={styles.sidebar} data-open={menuOpen}>
         <div className={styles.sidebarTop}>
-          <Logo />
+          <Logo tagline />
           <button
             className={`btn btn-ghost ${styles.iconButton} ${styles.closeButton}`}
             onClick={close}
