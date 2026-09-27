@@ -33,6 +33,12 @@ PALETTES = {
     "cloud-devops": ("#082f49", "#4338ca", "#7dd3fc"),
     "web-development": ("#431407", "#be185d", "#fbbf24"),
     "security": ("#022c1a", "#115e59", "#4ade80"),
+    "lifestyle": ("#451a03", "#ea580c", "#fde68a"),
+    "travel": ("#0c4a6e", "#0284c7", "#bae6fd"),
+    "food": ("#450a0a", "#b91c1c", "#fdba74"),
+    "health-wellness": ("#042f2e", "#0f766e", "#a7f3d0"),
+    "personal-finance": ("#1a2e05", "#4d7c0f", "#fde047"),
+    "books": ("#3b0764", "#9f1239", "#fecdd3"),
 }
 
 
@@ -318,6 +324,204 @@ def shield(draw, w, h, glow, rnd):
     )
 
 
+def hills(draw, w, h, glow, rnd):
+    """A sun rising over rolling hills, with a few birds."""
+    cx, cy, r = w * rnd.uniform(0.55, 0.72), h * 0.52, h * 0.24
+    for k, alpha in ((2.2, 30), (1.6, 55)):
+        draw.ellipse((cx - r * k, cy - r * k, cx + r * k, cy + r * k), fill=rgb(glow, alpha))
+    draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=rgb(glow, 240))
+    for i, (base, alpha) in enumerate(((0.62, 90), (0.72, 150), (0.84, 215))):
+        phase, amp = rnd.uniform(0, math.tau), h * rnd.uniform(0.04, 0.08)
+        top = [
+            (x, h * base + amp * math.sin(x / w * math.tau * (1.2 + i * 0.3) + phase))
+            for x in range(0, w + 1, w // 100)
+        ]
+        draw.polygon([*top, (w, h), (0, h)], fill=rgb("#1c0a02", alpha))
+    for _ in range(4):
+        x, y, s = (
+            rnd.uniform(0.12, 0.45) * w,
+            rnd.uniform(0.15, 0.4) * h,
+            w * rnd.uniform(0.012, 0.02),
+        )
+        draw.line(
+            [(x - s, y - s * 0.5), (x, y), (x + s, y - s * 0.5)],
+            fill=rgb(WHITE, 200),
+            width=int(w / 500),
+            joint="curve",
+        )
+
+
+def mountains(draw, w, h, glow, rnd):
+    """Layered peaks, a dotted flight path and map pins."""
+    for layer, alpha in ((0, 70), (1, 130), (2, 210)):
+        x = -w * 0.1
+        points = [(x, h)]
+        while x < w * 1.1:
+            peak = h * rnd.uniform(0.3, 0.5) + layer * h * 0.1
+            span = w * rnd.uniform(0.12, 0.22)
+            points += [(x + span / 2, peak), (x + span, h * (0.75 + layer * 0.05))]
+            x += span
+        points.append((w * 1.1, h))
+        draw.polygon(points, fill=rgb("#062538", alpha))
+    start, end = (w * 0.12, h * 0.55), (w * 0.86, h * 0.2)
+    lift = h * 0.28
+    for i in range(0, 60, 2):
+        t = i / 60
+        x = start[0] + (end[0] - start[0]) * t
+        y = start[1] + (end[1] - start[1]) * t - lift * math.sin(math.pi * t)
+        d = w / 400
+        draw.ellipse((x - d, y - d, x + d, y + d), fill=rgb(WHITE, 220))
+    # A paper plane at the end of the path
+    px, py, s = end[0], end[1], w * 0.03
+    draw.polygon(
+        [(px + s, py - s * 0.3), (px - s, py - s * 0.2), (px - s * 0.4, py + s * 0.5)],
+        fill=rgb(WHITE, 240),
+    )
+    for x, y in (start, (w * rnd.uniform(0.35, 0.6), h * rnd.uniform(0.6, 0.7))):
+        r = w * 0.018
+        draw.ellipse((x - r, y - r * 2.4, x + r, y - r * 0.4), fill=rgb(glow, 255))
+        draw.polygon(
+            [(x - r * 0.8, y - r * 1.1), (x + r * 0.8, y - r * 1.1), (x, y)], fill=rgb(glow, 255)
+        )
+        draw.ellipse((x - r * 0.4, y - r * 1.8, x + r * 0.4, y - r), fill=rgb("#062538", 255))
+
+
+def table(draw, w, h, glow, rnd):
+    """A meal seen from above: a plate, a bowl, cutlery and steam."""
+    cx, cy, r = w * 0.5, h * 0.52, h * 0.3
+    draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=rgb(WHITE, 225))
+    draw.ellipse(
+        (cx - r * 0.72, cy - r * 0.72, cx + r * 0.72, cy + r * 0.72),
+        outline=rgb("#000000", 25),
+        width=int(w / 400),
+    )
+    for _ in range(7):
+        a, d = rnd.uniform(0, math.tau), rnd.uniform(0, r * 0.45)
+        x, y, s = cx + math.cos(a) * d, cy + math.sin(a) * d, r * rnd.uniform(0.1, 0.2)
+        color = rnd.choice([glow, "#16a34a", "#dc2626", "#f59e0b"])
+        draw.ellipse((x - s, y - s, x + s, y + s), fill=rgb(color, 235))
+    # A fork on the left and a knife on the right
+    fx, kx, top, bottom = cx - r * 1.35, cx + r * 1.35, cy - r * 0.9, cy + r * 0.9
+    line = int(w / 180)
+    draw.line((fx, cy - r * 0.35, fx, bottom), fill=rgb(WHITE, 200), width=line)
+    for dx in (-1, 0, 1):
+        draw.line(
+            (fx + dx * line * 1.4, top, fx + dx * line * 1.4, cy - r * 0.3),
+            fill=rgb(WHITE, 200),
+            width=line // 2,
+        )
+    draw.rounded_rectangle(
+        (kx - line, top, kx + line * 0.8, bottom), radius=line, fill=rgb(WHITE, 200)
+    )
+    bx, by, br = w * rnd.uniform(0.8, 0.86), h * 0.26, h * 0.13
+    draw.ellipse((bx - br, by - br, bx + br, by + br), fill=rgb(glow, 220))
+    draw.ellipse(
+        (bx - br * 0.72, by - br * 0.72, bx + br * 0.72, by + br * 0.72), fill=rgb("#7c2d12", 200)
+    )
+    for i in range(3):
+        x = cx - r * 0.3 + i * r * 0.3
+        wisp = [
+            (x + math.sin(t / 8 + i) * w * 0.01, cy - r - h * 0.02 - t * h * 0.006)
+            for t in range(0, 26)
+        ]
+        draw.line(wisp, fill=rgb(WHITE, 90), width=int(w / 450), joint="curve")
+
+
+def heartbeat(draw, w, h, glow, rnd):
+    """Calm breathing rings behind a heartbeat line."""
+    cx, cy = w * rnd.uniform(0.4, 0.6), h * 0.5
+    for i in range(6, 0, -1):
+        r = h * 0.08 * i
+        draw.ellipse(
+            (cx - r, cy - r, cx + r, cy + r),
+            outline=rgb(glow, 25 + (6 - i) * 18),
+            width=int(w / 600),
+        )
+    points, x = [], 0.0
+    while x <= w:
+        beat = (x / w * 3 + rnd.uniform(-0.02, 0.02)) % 1
+        y = cy
+        if 0.45 < beat < 0.5:
+            y -= h * 0.28
+        elif 0.5 <= beat < 0.55:
+            y += h * 0.16
+        elif 0.35 < beat < 0.42:
+            y -= h * 0.05
+        points.append((x, y))
+        x += w / 240
+    draw.line(points, fill=rgb(glow, 250), width=int(w / 230), joint="curve")
+    for _ in range(5):
+        x, y, s = (
+            rnd.uniform(0.08, 0.92) * w,
+            rnd.uniform(0.1, 0.9) * h,
+            w * rnd.uniform(0.02, 0.035),
+        )
+        draw.ellipse((x - s, y - s * 0.45, x + s, y + s * 0.45), fill=rgb(WHITE, 60))
+        draw.line((x - s, y, x + s, y), fill=rgb(WHITE, 110), width=int(w / 800))
+
+
+def savings(draw, w, h, glow, rnd):
+    """Bars climbing to the right, a trend line and stacks of coins."""
+    bars, bw = 7, w * 0.06
+    left = w * 0.1
+    tops = []
+    value = h * 0.22
+    for i in range(bars):
+        value += h * rnd.uniform(0.02, 0.07)
+        x = left + i * bw * 1.5
+        top = h * 0.85 - value
+        tops.append((x + bw / 2, top))
+        draw.rounded_rectangle(
+            (x, top, x + bw, h * 0.85), radius=bw / 5, fill=rgb(WHITE, 60 + i * 18)
+        )
+    draw.line(tops, fill=rgb(glow, 255), width=int(w / 300), joint="curve")
+    for x, y in tops:
+        d = w / 150
+        draw.ellipse((x - d, y - d, x + d, y + d), fill=rgb(glow, 255))
+    for stack in range(3):
+        x = w * (0.78 + stack * 0.07)
+        for c in range(rnd.randint(3, 7)):
+            y = h * 0.85 - c * h * 0.035
+            r = w * 0.028
+            draw.ellipse(
+                (x - r, y - r * 0.35, x + r, y + r * 0.35),
+                fill=rgb(glow, 235),
+                outline=rgb("#713f12", 200),
+                width=int(w / 800),
+            )
+
+
+def bookshelf(draw, w, h, glow, rnd):
+    """A shelf of book spines, one leaning, and a lamp's glow."""
+    shelf = h * 0.8
+    draw.rounded_rectangle(
+        (w * 0.06, shelf, w * 0.94, shelf + h * 0.03), radius=h / 100, fill=rgb(WHITE, 120)
+    )
+    x = w * 0.1
+    colors = [glow, WHITE, "#fbbf24", "#a78bfa", "#fda4af", "#5eead4"]
+    while x < w * 0.7:
+        bw, bh = w * rnd.uniform(0.03, 0.055), h * rnd.uniform(0.38, 0.6)
+        if rnd.random() < 0.12:
+            x += w * 0.04
+            continue
+        color = rgb(rnd.choice(colors), rnd.randint(150, 230))
+        draw.rounded_rectangle((x, shelf - bh, x + bw, shelf), radius=w / 400, fill=color)
+        for band in (0.15, 0.8):
+            y = shelf - bh * band
+            draw.line(
+                (x + bw * 0.2, y, x + bw * 0.8, y), fill=rgb("#000000", 60), width=int(h / 150)
+            )
+        x += bw + w * 0.006
+    # One book leaning back against the end of the row
+    lean = [
+        (x + w * 0.12, shelf),
+        (x + w * 0.165, shelf),
+        (x + w * 0.04, shelf - h * 0.44),
+        (x + w * 0.002, shelf - h * 0.41),
+    ]
+    draw.polygon(lean, fill=rgb(glow, 220))
+
+
 MOTIFS = {
     "ai": neural_net,
     "genai": ribbons,
@@ -327,6 +531,12 @@ MOTIFS = {
     "cloud-devops": infrastructure,
     "web-development": browsers,
     "security": shield,
+    "lifestyle": hills,
+    "travel": mountains,
+    "food": table,
+    "health-wellness": heartbeat,
+    "personal-finance": savings,
+    "books": bookshelf,
 }
 
 

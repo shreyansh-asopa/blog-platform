@@ -91,4 +91,9 @@
     min-height: 200px;
     padding: 20px;
   }
+
+  /* The art fills the whole banner on a phone, so the text needs an even shade behind it */
+  .banner::before {
+    background: rgb(0 0 0 / 0.5);
+  }
 }
