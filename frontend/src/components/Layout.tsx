@@ -22,7 +22,12 @@ function Logo({ tagline = false }: { tagline?: boolean }) {
   return (
     <Link to="/" className={styles.logo}>
       <span className={styles.wordmark}>
-        <span aria-hidden>✦</span> Lumen
+        <span className={styles.mark} aria-hidden>
+          <svg viewBox="0 0 24 24">
+            <path d="M12 3Q14 10 21 12Q14 14 12 21Q10 14 3 12Q10 10 12 3Z" />
+          </svg>
+        </span>
+        <span className={styles.name}>Lumen</span>
       </span>
       {tagline && <span className={styles.tagline}>{TAGLINE}</span>}
     </Link>
