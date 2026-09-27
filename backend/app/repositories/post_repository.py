@@ -1,10 +1,11 @@
 import uuid
 from collections.abc import AsyncIterator
+from datetime import datetime
 
 from sqlalchemy import Select, exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Post, PostStatus, User, post_topics
+from app.models import Comment, Like, Post, PostStatus, User, post_topics
 from app.repositories.pagination import paginate
 from app.repositories.user_repository import username_is
 from app.schemas.pagination import PageParams
@@ -56,6 +57,41 @@ class PostRepository:
             # ts_rank scores how often and where (title or body) the words appear
             order_by.insert(0, func.ts_rank(Post.search_vector, terms).desc())
         return await paginate(self.session, query, params, *order_by)
+
+    async def trending(self, since: datetime, limit: int) -> list[Post]:
+        """Published posts with the most likes plus comments since `since`.
+
+        Ties, including a quiet week where every score is 0, go to the most liked and
+        commented posts overall, then the newest.
+        """
+        recent_likes = (
+            select(func.count())
+            .where(Like.post_id == Post.id, Like.created_at >= since)
+            .correlate(Post)
+            .scalar_subquery()
+        )
+        recent_comments = (
+            select(func.count())
+            .where(
+                Comment.post_id == Post.id,
+                Comment.created_at >= since,
+                Comment.deleted_at.is_(None),
+            )
+            .correlate(Post)
+            .scalar_subquery()
+        )
+        query = (
+            _visible()
+            .where(Post.status == PostStatus.PUBLISHED)
+            .order_by(
+                (recent_likes + recent_comments).desc(),
+                (Post.like_count + Post.comment_count).desc(),
+                Post.published_at.desc(),
+                Post.id,
+            )
+            .limit(limit)
+        )
+        return list(await self.session.scalars(query))
 
     async def count_published_by(self, author_id: uuid.UUID) -> int:
         query = _visible().where(Post.author_id == author_id, Post.status == PostStatus.PUBLISHED)

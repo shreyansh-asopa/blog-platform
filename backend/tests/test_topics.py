@@ -161,3 +161,49 @@ def test_topic_filter_combines_with_search(client: TestClient, ada):
     )
 
     assert feed(client, q="pipelines", topic="genai") == ["Pipelines for LLMs"]
+
+
+# --- Trending ---
+
+
+def trending(client: TestClient, **params) -> list[str]:
+    response = client.get(f"{TOPICS}/trending", params=params)
+    assert response.status_code == 200, response.text
+    return [t["slug"] for t in response.json()]
+
+
+def test_trending_ranks_topics_by_recent_likes_and_comments(client: TestClient, ada, make_user):
+    grace = make_user("grace")
+    publish(client, ada, create_post(client, ada, title="Quiet", topics=["ai"]))
+    busy = publish(client, ada, create_post(client, ada, title="Busy", topics=["travel"]))
+    some = publish(client, ada, create_post(client, ada, title="Some", topics=["security"]))
+    for user in (ada, grace):
+        client.put(f"{POSTS}/{busy['id']}/like", headers=user.headers)
+    client.post(f"{POSTS}/{busy['id']}/comments", json={"content": "Lovely"}, headers=grace.headers)
+    client.put(f"{POSTS}/{some['id']}/like", headers=grace.headers)
+
+    assert trending(client) == ["travel", "security", "ai"]
+    assert trending(client, limit=1) == ["travel"]
+
+
+def test_trending_ignores_old_likes(client: TestClient, ada, monkeypatch):
+    from datetime import timedelta
+
+    from app.services import topic_service
+
+    post = publish(client, ada, create_post(client, ada, title="Old news", topics=["travel"]))
+    client.put(f"{POSTS}/{post['id']}/like", headers=ada.headers)
+    # A zero-length window: the like happened before it started
+    monkeypatch.setattr(topic_service, "TRENDING_WINDOW", timedelta(0))
+
+    # With no engagement, the topic with the most posts leads
+    assert trending(client)[0] == "travel"
+    publish(client, ada, create_post(client, ada, title="A", topics=["ai"]))
+    publish(client, ada, create_post(client, ada, title="B", topics=["ai"]))
+    assert trending(client)[0] == "ai"
+
+
+def test_trending_limit_is_bounded(client: TestClient):
+    assert client.get(f"{TOPICS}/trending", params={"limit": 0}).status_code == 422
+    assert client.get(f"{TOPICS}/trending", params={"limit": 21}).status_code == 422
+    assert len(trending(client)) == 3

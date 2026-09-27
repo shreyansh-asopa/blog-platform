@@ -1,7 +1,7 @@
 import logging
 import secrets
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,6 +26,10 @@ from app.schemas.post import PostCreate, PostUpdate
 logger = logging.getLogger(__name__)
 
 
+# How far back likes and comments count towards a post trending
+TRENDING_WINDOW = timedelta(days=7)
+
+
 def can_manage(user: User, post: Post) -> bool:
     return post.author_id == user.id or has_permission(user, Permission.MANAGE_ANY_POST)
 
@@ -47,6 +51,9 @@ class PostService:
         topic: str | None = None,
     ) -> tuple[list[Post], int]:
         return await self.posts.list_published(params, search, author, topic)
+
+    async def trending(self, limit: int) -> list[Post]:
+        return await self.posts.trending(datetime.now(UTC) - TRENDING_WINDOW, limit)
 
     async def list_mine(
         self, user: User, params: PageParams, status: PostStatus | None
