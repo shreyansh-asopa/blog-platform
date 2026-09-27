@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 from sqlalchemy import Select, exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Post, PostStatus, User
+from app.models import Post, PostStatus, User, post_topics
 from app.repositories.pagination import paginate
 from app.repositories.user_repository import username_is
 from app.schemas.pagination import PageParams
@@ -30,17 +30,25 @@ class PostRepository:
         return bool(await self.session.scalar(select(exists().where(Post.slug == slug))))
 
     async def list_published(
-        self, params: PageParams, search: str | None = None, author: str | None = None
+        self,
+        params: PageParams,
+        search: str | None = None,
+        author: str | None = None,
+        topic: str | None = None,
     ) -> tuple[list[Post], int]:
         """Newest first, or best match first when searching.
 
         `search` takes what people type into search boxes: `"exact phrase"`, `or`, and
-        `-word` to exclude. `author` is a username; an unknown one just matches nothing.
+        `-word` to exclude. `author` is a username and `topic` a topic slug; an unknown
+        one just matches nothing.
         """
         query = _visible().where(Post.status == PostStatus.PUBLISHED)
         order_by = [Post.published_at.desc(), Post.id]
         if author:
             query = query.where(Post.author_id.in_(select(User.id).where(username_is(author))))
+        if topic:
+            tagged = select(post_topics.c.post_id).where(post_topics.c.topic_slug == topic.lower())
+            query = query.where(Post.id.in_(tagged))
         if search := (search or "").strip():
             # websearch_to_tsquery never fails on odd input, unlike to_tsquery
             terms = func.websearch_to_tsquery("english", search)

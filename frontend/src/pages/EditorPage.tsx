@@ -6,11 +6,13 @@ import type { NavigateOptions } from 'react-router'
 import { ApiError } from '../api/client'
 import { postsApi } from '../api/endpoints'
 import type { PostDetail, PostRead } from '../api/types'
+import { useTopics } from '../api/useTopics'
 import { useAuth } from '../auth/useAuth'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { Icon } from '../components/Icon'
 import { Markdown } from '../components/Markdown'
+import { TopicDot } from '../components/TopicTags'
 import { NotFoundPage } from './PlaceholderPage'
 import styles from './EditorPage.module.css'
 
@@ -19,6 +21,12 @@ const TITLE_MAX = 200
 const CONTENT_MAX = 100_000
 const COVER_MAX_BYTES = 5 * 1024 * 1024
 const COVER_TYPES = 'image/jpeg,image/png,image/webp'
+const TOPICS_MAX = 3
+
+const slugsOf = (post: PostRead) => post.topics.map((t) => t.slug)
+/** Same topics, in any order */
+const sameTopics = (a: string[], b: string[]) =>
+  a.length === b.length && a.every((slug) => b.includes(slug))
 
 interface EditorState {
   /** Keeps the same editor on screen when saving changes the URL (see EditorPage) */
@@ -61,10 +69,11 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
   const navigate = useNavigate()
   const contentRef = useRef<HTMLTextAreaElement>(null)
 
-  // `saved` is the post as the server last confirmed it; title and content are the form
+  // `saved` is the post as the server last confirmed it; title, content and topics are the form
   const [saved, setSaved] = useState<PostRead | null>(initial ?? null)
   const [title, setTitle] = useState(initial?.title ?? '')
   const [content, setContent] = useState(initial?.content ?? '')
+  const [topics, setTopics] = useState<string[]>(initial ? slugsOf(initial) : [])
   const [notice, setNotice] = useState('')
   // On narrow screens only one pane fits, so you switch between them
   const [view, setView] = useState<'write' | 'preview'>('write')
@@ -74,8 +83,10 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
   const preview = useDeferredValue(content)
 
   const dirty = saved
-    ? title.trim() !== saved.title || content !== saved.content
-    : title !== '' || content !== ''
+    ? title.trim() !== saved.title ||
+      content !== saved.content ||
+      !sameTopics(topics, slugsOf(saved))
+    : title !== '' || content !== '' || topics.length > 0
   const complete = title.trim() !== '' && content.trim() !== ''
   const published = saved?.status === 'published'
 
@@ -115,6 +126,9 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
       liked_by_me: old?.liked_by_me ?? false,
     }))
     queryClient.invalidateQueries({ queryKey: ['posts'] })
+    // Topic post counts change as posts are published or refiled
+    queryClient.invalidateQueries({ queryKey: ['topics'] })
+    queryClient.invalidateQueries({ queryKey: ['topic'] })
     // A new post gets its first URL, and a draft's URL follows its title
     if (post.slug !== previous?.slug) {
       go(`/edit/${post.slug}`, { replace: true, state: { editorKey } })
@@ -127,7 +141,7 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
       // Save first, so publishing never loses the latest edits. Each step is remembered
       // straight away: if publishing then fails, a retry won't create a second copy.
       if (!post || dirty) {
-        const data = { title, content }
+        const data = { title, content, topics }
         const next = post ? await postsApi.update(post.id, data) : await postsApi.create(data)
         remember(next, post)
         post = next
@@ -267,6 +281,8 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
         autoFocus={!initial}
       />
 
+      <TopicPicker selected={topics} onChange={setTopics} disabled={busy} />
+
       <div className={styles.tabs}>
         <button
           className={styles.tab}
@@ -319,6 +335,46 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
           )}
         </section>
       </div>
+    </div>
+  )
+}
+
+interface TopicPickerProps {
+  selected: string[]
+  onChange: (slugs: string[]) => void
+  disabled: boolean
+}
+
+/** Toggles for filing the post under up to three topics. Saved with the post. */
+function TopicPicker({ selected, onChange, disabled }: TopicPickerProps) {
+  const topics = useTopics()
+  if (!topics.data) return null
+  const full = selected.length >= TOPICS_MAX
+
+  return (
+    <div className={styles.topics} role="group" aria-labelledby="topics-label">
+      <span id="topics-label" className={`muted ${styles.topicsLabel}`}>
+        Topics <span>(up to {TOPICS_MAX})</span>
+      </span>
+      {topics.data.map((topic) => {
+        const on = selected.includes(topic.slug)
+        return (
+          <button
+            key={topic.slug}
+            type="button"
+            className="chip"
+            aria-pressed={on}
+            // Once three are picked, the rest wait until one is taken off
+            disabled={disabled || (full && !on)}
+            onClick={() =>
+              onChange(on ? selected.filter((s) => s !== topic.slug) : [...selected, topic.slug])
+            }
+          >
+            <TopicDot slug={topic.slug} />
+            {topic.name}
+          </button>
+        )
+      })}
     </div>
   )
 }

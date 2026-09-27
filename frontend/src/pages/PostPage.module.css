@@ -56,6 +56,11 @@
   letter-spacing: -0.02em;
 }
 
+/* Between the title and the text, closer to the title */
+.topics {
+  margin: -16px 0 32px;
+}
+
 .actions {
   display: flex;
   gap: 8px;

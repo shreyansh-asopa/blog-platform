@@ -9,6 +9,7 @@ import { Comments } from '../components/Comments'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { LikeButton } from '../components/LikeButton'
 import { Markdown } from '../components/Markdown'
+import { TopicTags } from '../components/TopicTags'
 import { formatDate } from '../lib/format'
 import { NotFoundPage } from './PlaceholderPage'
 import styles from './PostPage.module.css'
@@ -57,6 +58,7 @@ export function PostPage() {
           </header>
 
           <h1 className={styles.title}>{p.title}</h1>
+          <TopicTags topics={p.topics} className={styles.topics} />
 
           <Markdown>{p.content}</Markdown>
 

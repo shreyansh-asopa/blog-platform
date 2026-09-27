@@ -19,6 +19,7 @@ from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
 from app.db.base import Base, SoftDeleteMixin, TimestampMixin
 from app.models.comment import Comment
 from app.models.like import Like
+from app.models.topic import Topic, post_topics
 from app.models.user import User
 
 
@@ -72,6 +73,11 @@ class Post(TimestampMixin, SoftDeleteMixin, Base):
     # Loaded in the same query as the post (a JOIN), so listing posts never
     # fires one extra query per post to fetch its author (the "N+1" problem)
     author: Mapped[User] = relationship(lazy="joined")
+    # At most 3 (checked by the API). "selectin" loads the topics of a whole page of posts
+    # in one extra query, instead of one per post
+    topics: Mapped[list[Topic]] = relationship(
+        secondary=post_topics, lazy="selectin", order_by=Topic.position
+    )
 
     # Counted by subqueries inside the same SELECT that loads the post, so a page of
     # 20 posts is still one query, not 21. Not real columns: nothing is stored

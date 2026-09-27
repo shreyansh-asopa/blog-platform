@@ -5,10 +5,14 @@ from typing import Annotated, Self
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 from app.models import PostStatus
+from app.schemas.topic import TopicRead
 
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 Content = Annotated[str, StringConstraints(min_length=1, max_length=100_000)]
 Excerpt = Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)]
+TopicSlug = Annotated[str, StringConstraints(strip_whitespace=True, to_lower=True, max_length=40)]
+# Topic slugs, e.g. ["ai", "genai"]. Up to 3, so a post can't be filed under everything
+Topics = Annotated[list[TopicSlug], Field(max_length=3)]
 
 
 class PostCreate(BaseModel):
@@ -16,6 +20,7 @@ class PostCreate(BaseModel):
     content: Content
     # Left out: generated from the content
     excerpt: Excerpt | None = None
+    topics: Topics = []
 
 
 class PostUpdate(BaseModel):
@@ -24,10 +29,12 @@ class PostUpdate(BaseModel):
     title: Title | None = None
     content: Content | None = None
     excerpt: Excerpt | None = None
+    # Replaces the post's topics; send [] to clear them
+    topics: Topics | None = None
 
     @model_validator(mode="after")
-    def title_and_content_cannot_be_null(self) -> Self:
-        for field in ("title", "content"):
+    def fields_cannot_be_null(self) -> Self:
+        for field in ("title", "content", "topics"):
             if field in self.model_fields_set and getattr(self, field) is None:
                 raise ValueError(f"{field} cannot be null")
         return self
@@ -55,6 +62,7 @@ class PostSummary(BaseModel):
     created_at: datetime
     updated_at: datetime
     author: AuthorRead
+    topics: list[TopicRead]
     like_count: int
     comment_count: int
 

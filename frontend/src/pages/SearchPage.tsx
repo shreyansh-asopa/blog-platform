@@ -3,34 +3,52 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useSearchParams } from 'react-router'
 import { postsApi } from '../api/endpoints'
+import type { TopicDetail } from '../api/types'
+import { useTopics } from '../api/useTopics'
 import { Icon } from '../components/Icon'
 import { PostList } from '../components/PostList'
+import { TopicDot } from '../components/TopicTags'
 import { plural } from '../lib/format'
 import styles from './SearchPage.module.css'
 
 const PAGE_SIZE = 10
 
-/** /search?q=…: published posts, best match first */
+/** Builds the search URL's query, leaving out what's empty (and page 1) */
+function searchParams(q: string, topic: string, page = 1) {
+  const params: Record<string, string> = {}
+  if (q) params.q = q
+  if (topic) params.topic = topic
+  if (page > 1) params.page = String(page)
+  return params
+}
+
+/** /search?q=…&topic=…: published posts, best match first, optionally in one topic */
 export function SearchPage() {
   const [params, setParams] = useSearchParams()
   const q = (params.get('q') ?? '').trim()
+  const topic = (params.get('topic') ?? '').trim().toLowerCase()
   const page = Math.max(1, Number(params.get('page')) || 1)
+  const topics = useTopics()
+  const current = topics.data?.find((t) => t.slug === topic)
 
   const results = useQuery({
-    queryKey: ['posts', 'search', q, page],
-    queryFn: () => postsApi.feed(page, PAGE_SIZE, { q }),
-    enabled: q !== '',
+    queryKey: ['posts', 'search', q, topic, page],
+    queryFn: () => postsApi.feed(page, PAGE_SIZE, { q, topic }),
+    // A topic on its own lists that topic's posts, newest first
+    enabled: q !== '' || topic !== '',
     placeholderData: keepPreviousData,
   })
 
   useEffect(() => {
-    document.title = q ? `${q} · Search · Lumen` : 'Search · Lumen'
+    const what = [q, current?.name].filter(Boolean).join(' in ')
+    document.title = what ? `${what} · Search · Lumen` : 'Search · Lumen'
     return () => {
       document.title = 'Lumen'
     }
-  }, [q])
+  }, [q, current])
 
-  const href = (n: number) => `?${new URLSearchParams(n === 1 ? { q } : { q, page: String(n) })}`
+  const href = (n: number) => `?${new URLSearchParams(searchParams(q, topic, n))}`
+  const where = current ? ` in ${current.name}` : ''
 
   return (
     <div className={styles.page}>
@@ -42,12 +60,24 @@ export function SearchPage() {
         key={q}
         initial={q}
         // A new search is a new history entry, so Back returns to the previous one
-        onSearch={(next) => setParams(next ? { q: next } : {})}
+        onSearch={(next) => setParams(searchParams(next, topic))}
       />
 
-      {q === '' ? (
+      {topics.data && (
+        <TopicFilter
+          topics={topics.data}
+          selected={topic}
+          // Picking a topic keeps the words, and starts again from page 1
+          onSelect={(next) => setParams(searchParams(q, next))}
+        />
+      )}
+
+      {q === '' && topic === '' ? (
         <div className={`muted ${styles.tips}`}>
-          <p>Searches the titles and text of every published post. You can use:</p>
+          <p>
+            Searches the titles and text of every published post. Pick a topic above to narrow it
+            down, or to browse it. You can use:
+          </p>
           <ul>
             <li>
               <code>"exact phrase"</code> for words next to each other
@@ -64,7 +94,9 @@ export function SearchPage() {
         <>
           {results.data && (
             <p className="muted" aria-live="polite">
-              {plural(results.data.total, 'result')} for “{q}”
+              {q
+                ? `${plural(results.data.total, 'result')} for “${q}”${where}`
+                : `${plural(results.data.total, 'post')}${where}`}
             </p>
           )}
           <PostList
@@ -74,8 +106,10 @@ export function SearchPage() {
             href={href}
             empty={
               <>
-                <p>No posts match “{q}”.</p>
-                <p className="muted">Try fewer or different words.</p>
+                <p>{q ? `No posts match “${q}”${where}.` : `No posts${where} yet.`}</p>
+                <p className="muted">
+                  {topic ? 'Try another topic, or all topics.' : 'Try fewer or different words.'}
+                </p>
               </>
             }
           />
@@ -114,5 +148,35 @@ function SearchForm({ initial, onSearch }: { initial: string; onSearch: (q: stri
         Search
       </button>
     </form>
+  )
+}
+
+interface FilterProps {
+  topics: TopicDetail[]
+  /** A topic slug, or '' for all topics */
+  selected: string
+  onSelect: (slug: string) => void
+}
+
+/** A row of topic toggles under the search box. One topic at a time; "All" clears it. */
+function TopicFilter({ topics, selected, onSelect }: FilterProps) {
+  return (
+    <div className={styles.filter} role="group" aria-label="Filter by topic">
+      <button className="chip" aria-pressed={selected === ''} onClick={() => onSelect('')}>
+        All topics
+      </button>
+      {topics.map((topic) => (
+        <button
+          key={topic.slug}
+          className="chip"
+          aria-pressed={selected === topic.slug}
+          // Clicking the chosen topic again turns the filter off
+          onClick={() => onSelect(selected === topic.slug ? '' : topic.slug)}
+        >
+          <TopicDot slug={topic.slug} />
+          {topic.name}
+        </button>
+      ))}
+    </div>
   )
 }

@@ -1,0 +1,94 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+/* The art is dark in both themes, so the text on it is always white. A shade on the left
+   keeps it readable over the brighter parts of the picture. */
+.banner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 220px;
+  justify-content: flex-end;
+  padding: 28px;
+  border-radius: var(--radius);
+  background-color: #1e1b4b;
+  background-position: right center;
+  background-size: cover;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.1) 70%);
+}
+
+.kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.name {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.description {
+  max-width: 460px;
+  margin: 0;
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* A frosted button that reads on any part of the art. Two classes, to beat .btn */
+.banner .searchLink {
+  padding: 6px 12px;
+  border-color: rgb(255 255 255 / 0.35);
+  background: rgb(255 255 255 / 0.12);
+  color: #ffffff;
+  backdrop-filter: blur(6px);
+}
+
+.banner .searchLink:hover {
+  background: rgb(255 255 255 / 0.22);
+}
+
+.subheading {
+  margin: 8px 0 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 18px;
+}
+
+@media (max-width: 600px) {
+  .banner {
+    min-height: 200px;
+    padding: 20px;
+  }
+}

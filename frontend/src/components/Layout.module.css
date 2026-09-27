@@ -39,10 +39,46 @@
 }
 
 .nav,
+.topics,
 .sidebarBottom {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.topics {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.topics .navLink {
+  padding-block: 7px;
+  font-size: 14px;
+}
+
+.sectionHeading {
+  margin: 0 0 6px;
+  padding: 0 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.topicName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Theme, account and log in sit at the bottom */

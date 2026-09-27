@@ -10,14 +10,16 @@ from app.core.exceptions import (
     ConflictError,
     NotFoundError,
     PermissionDeniedError,
+    UnknownTopicError,
     UnsupportedFileTypeError,
 )
 from app.core.text import make_excerpt, slugify
 from app.integrations.storage import Storage, detect_image_type
-from app.models import AuditAction, Post, PostStatus, User
+from app.models import AuditAction, Post, PostStatus, Topic, User
 from app.permissions import Permission, has_permission
 from app.repositories.audit_log_repository import AuditLogRepository
 from app.repositories.post_repository import PostRepository
+from app.repositories.topic_repository import TopicRepository
 from app.schemas.pagination import PageParams
 from app.schemas.post import PostCreate, PostUpdate
 
@@ -33,13 +35,18 @@ class PostService:
         self.session = session
         self.posts = PostRepository(session)
         self.audit = AuditLogRepository(session)
+        self.topics = TopicRepository(session)
 
     # --- Reading ---
 
     async def list_published(
-        self, params: PageParams, search: str | None = None, author: str | None = None
+        self,
+        params: PageParams,
+        search: str | None = None,
+        author: str | None = None,
+        topic: str | None = None,
     ) -> tuple[list[Post], int]:
-        return await self.posts.list_published(params, search, author)
+        return await self.posts.list_published(params, search, author, topic)
 
     async def list_mine(
         self, user: User, params: PageParams, status: PostStatus | None
@@ -64,6 +71,7 @@ class PostService:
             slug=await self._unique_slug(data.title),
             content=data.content,
             excerpt=data.excerpt or make_excerpt(data.content),
+            topics=await self._topics(data.topics),
         )
         await self.posts.add(post)
         return await self._save(post)
@@ -87,6 +95,9 @@ class PostService:
 
         if "excerpt" in changes:
             post.excerpt = changes["excerpt"] or make_excerpt(post.content)
+
+        if "topics" in changes:
+            post.topics = await self._topics(changes["topics"])
 
         self._audit_if_not_author(user, AuditAction.POST_UPDATED, post, fields=sorted(changes))
         return await self._save(post)
@@ -190,6 +201,14 @@ class PostService:
             # "my-post" is taken: try "my-post-3f9a2c"
             slug = f"{slugify(title)[:193]}-{secrets.token_hex(3)}"
         return slug
+
+    async def _topics(self, slugs: list[str]) -> list[Topic]:
+        """Looks up topics by slug. Repeats are ignored; any unknown slug is an error."""
+        wanted = list(dict.fromkeys(slugs))
+        found = await self.topics.get_many(wanted)
+        if unknown := set(wanted) - {topic.slug for topic in found}:
+            raise UnknownTopicError(f"Unknown topic: {', '.join(sorted(unknown))}")
+        return found
 
     async def _save(self, post: Post) -> Post:
         try:

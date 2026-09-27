@@ -109,6 +109,23 @@
   opacity: 0.6;
 }
 
+.topics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.topicsLabel {
+  margin-right: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.topicsLabel span {
+  font-weight: 400;
+}
+
 .panes {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

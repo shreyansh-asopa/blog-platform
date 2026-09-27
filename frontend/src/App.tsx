@@ -11,6 +11,7 @@ import { NotFoundPage } from './pages/PlaceholderPage'
 import { PostPage } from './pages/PostPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { SearchPage } from './pages/SearchPage'
+import { TopicPage } from './pages/TopicPage'
 
 /** Every page, for createRoutesFromElements in main.tsx */
 export const routes = (
@@ -21,6 +22,7 @@ export const routes = (
     <Route path="register" element={<RegisterPage />} />
     <Route path="p/:slug" element={<PostPage />} />
     <Route path="u/:username" element={<AuthorPage />} />
+    <Route path="t/:slug" element={<TopicPage />} />
     <Route path="search" element={<SearchPage />} />
 
     <Route
