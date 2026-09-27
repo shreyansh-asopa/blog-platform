@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useDeferredValue, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router'
+import { Link, useBlocker, useLocation, useNavigate, useParams } from 'react-router'
+import type { NavigateOptions } from 'react-router'
 import { ApiError } from '../api/client'
 import { postsApi } from '../api/endpoints'
 import type { PostDetail, PostRead } from '../api/types'
 import { useAuth } from '../auth/useAuth'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { Icon } from '../components/Icon'
 import { Markdown } from '../components/Markdown'
@@ -92,6 +94,19 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
     return () => window.removeEventListener('beforeunload', warn)
   }, [dirty])
 
+  // Any other move inside Lumen (a link, the Back button, even "Write" again, which starts a
+  // blank editor) asks with our own dialog. The editor's own moves, like /write becoming
+  // /edit/:slug after a save, set `ours` so they go through: they run before React
+  // re-renders, while `dirty` still reads true.
+  const ours = useRef(false)
+  const blocker = useBlocker(() => dirty && !ours.current)
+
+  function go(to: string, options?: NavigateOptions) {
+    ours.current = true
+    navigate(to, options)
+    ours.current = false
+  }
+
   /** Takes in a post the server just returned: the editor, the cache and the URL follow it */
   function remember(post: PostRead, previous: PostRead | null) {
     setSaved(post)
@@ -102,7 +117,7 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
     queryClient.invalidateQueries({ queryKey: ['posts'] })
     // A new post gets its first URL, and a draft's URL follows its title
     if (post.slug !== previous?.slug) {
-      navigate(`/edit/${post.slug}`, { replace: true, state: { editorKey } })
+      go(`/edit/${post.slug}`, { replace: true, state: { editorKey } })
     }
   }
 
@@ -123,7 +138,7 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
     },
     onSuccess: (post, action) => {
       remember(post, post)
-      if (action === 'publish') navigate(`/p/${post.slug}`)
+      if (action === 'publish') go(`/p/${post.slug}`)
       else if (action === 'unpublish') setNotice('Moved back to drafts')
       else setNotice(published ? 'Changes saved' : 'Draft saved')
     },
@@ -208,6 +223,18 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
           )}
         </div>
       </header>
+
+      {blocker.state === 'blocked' && (
+        <ConfirmDialog
+          title="Leave without saving?"
+          confirmLabel="Discard changes"
+          cancelLabel="Keep editing"
+          onConfirm={() => blocker.proceed()}
+          onCancel={() => blocker.reset()}
+        >
+          <p>Your unsaved changes to this post will be lost.</p>
+        </ConfirmDialog>
+      )}
 
       {change.isError && <ErrorMessage error={change.error} />}
       {cover.isError && <ErrorMessage error={cover.error} />}

@@ -1,0 +1,35 @@
+.dialog {
+  width: min(420px, calc(100vw - 32px));
+  padding: 24px;
+  color: var(--text);
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 0.5);
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.body p {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.danger:hover {
+  background: var(--danger-soft);
+}
