@@ -6,7 +6,19 @@ Each post's topics decide its cover: the seed uses the art drawn for its first t
 
 from dataclasses import dataclass, field
 
-AUTHORS = ["ada_writes", "grace_codes", "linus_notes", "maya_data", "arjun_ml", "sofia_secops"]
+AUTHORS = [
+    "ada_writes",
+    "grace_codes",
+    "linus_notes",
+    "maya_data",
+    "arjun_ml",
+    "sofia_secops",
+    # Writing about life outside work
+    "priya_travels",
+    "tomas_cooks",
+    "leah_reads",
+    "omar_money",
+]
 
 
 @dataclass
@@ -811,5 +823,371 @@ name.
 Keys belong in environment variables, never in the repository, especially a public one.
 
 Ask these five on every PR and you'll prevent more incidents than any scanner.""",
+    ),
+    # --- Life outside work ---
+    SamplePost(
+        author="leah_reads",
+        title="The slow morning routine that fixed my week",
+        topics=["lifestyle", "health-wellness"],
+        days_ago=0,
+        liked_by=["priya_travels", "omar_money", "ada_writes"],
+        comments=[
+            ("priya_travels", "The phone-in-the-kitchen rule is the hardest one and the best one."),
+            ("ada_writes", "Trying the ten-minute walk tomorrow."),
+        ],
+        content="""For years my mornings started with my phone and ended with me running late.
+Here is the small routine that changed that. None of it takes more than **45 minutes**.
+
+## The four steps
+
+1. **Water before coffee.** A full glass, first thing.
+2. **Ten minutes outside.** A walk round the block, whatever the weather.
+3. **One page in a notebook.** Not a journal: just what's on my mind.
+4. **Coffee and one chapter** of whatever I'm reading.
+
+## The rule that makes it work
+
+The phone charges in the kitchen, not by the bed. I check it only after step four.
+
+> You don't need a perfect morning. You need one that is yours before it's everyone else's.
+
+Two months in, the biggest change isn't the extra time. It's that I start the day
+having *chosen* something, instead of reacting to it.""",
+    ),
+    SamplePost(
+        author="priya_travels",
+        title="Packing light: one bag for two weeks",
+        topics=["travel", "lifestyle"],
+        days_ago=2,
+        liked_by=["leah_reads", "tomas_cooks"],
+        comments=[
+            ("tomas_cooks", "Merino wool changed my life. No notes."),
+            ("leah_reads", "Where does the book go though?"),
+            ("priya_travels", "E-reader. It's the one gadget I never leave behind."),
+        ],
+        content="""I've travelled with a single 35-litre backpack for three years now:
+Portugal, Japan, Peru. Here's the list, and the thinking behind it.
+
+## The list
+
+| Item | How many |
+|------|---------:|
+| T-shirts (merino) | 4 |
+| Trousers | 2 |
+| Light jumper | 1 |
+| Rain jacket | 1 |
+| Underwear and socks | 5 each |
+| Shoes (worn, not packed) | 1 pair |
+
+## Three rules
+
+- **Everything goes with everything.** Pick two or three colours and stick to them.
+- **Plan to do laundry.** A sink and a bar of soap every four days beats a second bag.
+- **Pack for the trip you're taking**, not the one you're afraid of. Shops exist abroad.
+
+The real win isn't the airline fees you save. It's stepping off a train and walking
+straight into the city instead of hunting for a taxi.""",
+    ),
+    SamplePost(
+        author="tomas_cooks",
+        title="Five pantry staples that make weeknight dinners easy",
+        topics=["food", "health-wellness"],
+        days_ago=3,
+        liked_by=["leah_reads", "omar_money", "maya_data"],
+        comments=[("omar_money", "Also cheaper than takeaway. Win-win.")],
+        content="""Most of my weeknight cooking takes 20 minutes, and it starts with what's
+already in the cupboard. Keep these five in stock and dinner is never far away.
+
+## The staples
+
+1. **Tinned chickpeas.** Roast them, mash them, toss them in a curry.
+2. **Good olive oil.** The single ingredient that most improves simple food.
+3. **Dried pasta.** Pair with garlic, chilli and oil for a meal in ten minutes.
+4. **Tinned tomatoes.** The base of a hundred sauces and soups.
+5. **Lemons.** A squeeze at the end wakes up almost anything.
+
+## A 15-minute example
+
+Warm oil with sliced garlic and chilli, add a drained tin of chickpeas and a tin of
+tomatoes, simmer for ten minutes, finish with lemon and black pepper. Serve with bread.
+
+> Cooking every night is easier when you stop starting from zero.""",
+    ),
+    SamplePost(
+        author="omar_money",
+        title="The 50/30/20 budget, explained simply",
+        topics=["personal-finance"],
+        days_ago=4,
+        liked_by=["priya_travels", "leah_reads", "grace_codes", "linus_notes"],
+        comments=[
+            ("grace_codes", "Finally a budget I can remember without a spreadsheet."),
+            ("priya_travels", "Travel falls under wants, I assume? 😅"),
+            ("omar_money", "It does. Which is exactly why it's worth planning for."),
+        ],
+        content="""Budgeting doesn't have to mean tracking every coffee. The **50/30/20 rule**
+splits your take-home pay into three buckets.
+
+## The three buckets
+
+| Bucket | Share | Examples |
+|--------|------:|----------|
+| Needs | 50% | Rent, bills, groceries, transport |
+| Wants | 30% | Eating out, hobbies, holidays |
+| Savings | 20% | Emergency fund, pension, paying off debt |
+
+## Making it automatic
+
+- On payday, move the **20% out first**, before you can spend it.
+- Keep wants in a separate account, so "can I afford this?" is one glance.
+- Review once a month, not once a day.
+
+## When it doesn't fit
+
+In an expensive city, needs can be 60% or more. That's fine: treat the numbers as a
+starting point, and shrink wants before savings.
+
+*This is general information, not financial advice.*""",
+    ),
+    SamplePost(
+        author="leah_reads",
+        title="How I read 40 books a year without speed reading",
+        topics=["books", "lifestyle"],
+        days_ago=5,
+        liked_by=["tomas_cooks", "ada_writes", "priya_travels"],
+        comments=[
+            ("ada_writes", "Permission to quit a book is so freeing."),
+            ("tomas_cooks", "Audiobooks while cooking count, right?"),
+            ("leah_reads", "Absolutely. A story is a story."),
+        ],
+        content="""Forty books sounds like a lot. It works out to about **20 pages a day**.
+Here's how that fits into an ordinary week.
+
+## What actually helped
+
+- **Always carry a book.** Queues, trains and waiting rooms add up.
+- **Quit books you don't enjoy.** Fifty pages is enough to decide.
+- **Read two at once:** one easy, one demanding. Pick by mood.
+- **Replace one scroll a day.** The evening scroll became my reading time.
+
+## What didn't help
+
+Challenges and streak apps. They made reading feel like homework, and I read
+*worse* books just to hit a number.
+
+> The goal isn't to finish more books. It's to spend more of your life inside good ones.""",
+    ),
+    SamplePost(
+        author="priya_travels",
+        title="Three days in Lisbon on a small budget",
+        topics=["travel", "food"],
+        days_ago=6,
+        liked_by=["tomas_cooks", "omar_money"],
+        comments=[
+            ("tomas_cooks", "The custard tarts at Belém are worth the queue. Every time."),
+            ("omar_money", "Love a trip with a real budget attached."),
+        ],
+        content="""Lisbon is hilly, sunny and still kinder to your wallet than most European
+capitals. Here's a relaxed three-day plan.
+
+## Day 1: Alfama and the castle
+
+Wander the old streets with no map, then climb to the castle for the view at sunset.
+
+## Day 2: Belém
+
+Take the tram west for the monastery, the tower, and *pastéis de nata* straight from
+the oven.
+
+## Day 3: A day trip to Sintra
+
+A 40-minute train ride to palaces in the forest. Go early; it gets busy by eleven.
+
+## Rough costs per day
+
+| Item | Cost |
+|------|-----:|
+| Hostel or guesthouse | €35 |
+| Food | €25 |
+| Transport pass | €7 |
+| Sights | €15 |
+
+Walk more than you think you can: the best parts of the city are between the sights.""",
+    ),
+    SamplePost(
+        author="omar_money",
+        title="Building an emergency fund, one small step at a time",
+        topics=["personal-finance", "lifestyle"],
+        days_ago=7,
+        liked_by=["leah_reads", "sofia_secops"],
+        comments=[("sofia_secops", "Automate it and forget it. Same rule as backups.")],
+        content="""An emergency fund is money set aside for the surprises: a broken boiler,
+a vet bill, a gap between jobs. It's the difference between a bad week and a crisis.
+
+## How much?
+
+Aim for **three to six months** of essential spending. If that sounds impossible,
+start with a smaller goal: one month, or even a fixed amount like 500.
+
+## How to build it
+
+1. Open a **separate savings account**, so it's out of sight.
+2. Set up a **standing order** for payday, however small.
+3. Put windfalls in: tax refunds, birthday money, a bonus.
+4. **Refill it** after you use it. That's what it's for.
+
+> The best time to build an emergency fund is before you need it.
+> The second best time is today.
+
+*General information only, not personal financial advice.*""",
+    ),
+    SamplePost(
+        author="tomas_cooks",
+        title="Sourdough for beginners: what I wish I'd known",
+        topics=["food"],
+        days_ago=8,
+        liked_by=["leah_reads", "priya_travels", "arjun_ml"],
+        comments=[
+            ("arjun_ml", "Weighing everything is the tip that finally made mine work."),
+            ("tomas_cooks", "Bakers and engineers agree: measure, don't guess."),
+        ],
+        content="""My first five loaves were bricks. The sixth was bread. Here's what changed.
+
+## The lessons
+
+- **Your starter needs to be lively.** It should double within 4–8 hours of feeding.
+- **Weigh everything.** Cups vary; grams don't.
+- **Watch the dough, not the clock.** A warm kitchen ferments twice as fast as a cold one.
+- **Bake hotter than feels right.** A lidded pot at 240 °C gives the crust.
+
+## A simple ratio
+
+| Ingredient | Amount |
+|------------|-------:|
+| Bread flour | 500 g |
+| Water | 350 g |
+| Starter | 100 g |
+| Salt | 10 g |
+
+Mix, fold every 30 minutes for two hours, shape, rest in the fridge overnight, bake.
+
+Your first loaf won't be perfect. Eat it anyway. It will still be better than shop bread.""",
+    ),
+    SamplePost(
+        author="leah_reads",
+        title="Ten novels to read on a long journey",
+        topics=["books", "travel"],
+        days_ago=9,
+        liked_by=["priya_travels", "tomas_cooks", "linus_notes"],
+        comments=[
+            ("priya_travels", "Adding three of these for my next flight."),
+            ("linus_notes", "The Remains of the Day on a train is perfect."),
+        ],
+        content="""A long train or flight is the best reading time there is. These are
+novels that pull you in and hold you for hours.
+
+## The list
+
+1. *The Remains of the Day*, Kazuo Ishiguro
+2. *A Gentleman in Moscow*, Amor Towles
+3. *The Shadow of the Wind*, Carlos Ruiz Zafón
+4. *Pachinko*, Min Jin Lee
+5. *Circe*, Madeline Miller
+6. *The Night Circus*, Erin Morgenstern
+7. *Station Eleven*, Emily St. John Mandel
+8. *Life of Pi*, Yann Martel
+9. *The Name of the Wind*, Patrick Rothfuss
+10. *Anxious People*, Fredrik Backman
+
+## How I chose
+
+Each one is **easy to start** and **hard to put down**, and none needs a pencil and
+notes. Save the demanding books for home.""",
+    ),
+    SamplePost(
+        author="omar_money",
+        title="Walking 8,000 steps a day: what changed after 90 days",
+        topics=["health-wellness", "lifestyle"],
+        days_ago=11,
+        liked_by=["leah_reads", "priya_travels", "maya_data"],
+        comments=[
+            ("maya_data", "Do you have the step data? I'd love to see the chart."),
+            ("omar_money", "Ha, of course. Maybe a follow-up post."),
+        ],
+        content="""I work at a desk all day. In January I set one goal: **8,000 steps**, every
+day, for three months. No gym, no diet.
+
+## What changed
+
+- **Sleep.** I fall asleep faster, and wake up less in the night.
+- **Mood.** The afternoon slump mostly disappeared.
+- **Thinking.** Some of my best ideas now arrive on the walk home.
+
+## How I fitted it in
+
+- Phone calls became walking calls.
+- I got off the bus one stop early.
+- A 15-minute walk after lunch, every day.
+
+## What didn't change
+
+I didn't lose much weight, and that's fine. It was never really about that.
+
+*I'm not a doctor. If you have health conditions, check with one before starting a new routine.*""",
+    ),
+    SamplePost(
+        author="tomas_cooks",
+        title="Eating well on a busy week: a simple meal prep plan",
+        topics=["health-wellness", "food"],
+        days_ago=12,
+        liked_by=["omar_money", "grace_codes"],
+        comments=[("grace_codes", "Sunday prep has saved my weekday lunches.")],
+        content="""Two hours on Sunday gives me healthy lunches all week. The trick is to
+prepare **components**, not whole meals, so nothing gets boring.
+
+## Sunday: prepare
+
+- A tray of **roasted vegetables**
+- A pot of **grains**: rice, quinoa or farro
+- A **protein**: baked tofu, chicken or boiled eggs
+- One **sauce**: tahini-lemon, pesto or a yoghurt dressing
+
+## Weekdays: combine
+
+| Day | Bowl |
+|-----|------|
+| Mon | Grains, vegetables, eggs, tahini |
+| Tue | Vegetables in a wrap with pesto |
+| Wed | Grains, tofu, yoghurt dressing |
+| Thu | Leftovers turned into a soup |
+| Fri | Treat yourself: eat out |
+
+Store everything in glass boxes, and most of it keeps for four days in the fridge.""",
+    ),
+    SamplePost(
+        author="priya_travels",
+        title="Books that made me want to travel",
+        topics=["books", "travel"],
+        days_ago=13,
+        liked_by=["leah_reads", "omar_money"],
+        comments=[
+            ("leah_reads", "Adding The Great Railway Bazaar to my list right now."),
+            ("priya_travels", "It's the reason I took the night train through Vietnam."),
+        ],
+        content="""Some books make you want to pack a bag the moment you close them.
+These did that for me.
+
+## The shelf
+
+- ***The Great Railway Bazaar*** by Paul Theroux. Across Asia by train, grumpy and brilliant.
+- ***A Walk in the Woods*** by Bill Bryson. Funny, warm, and about the joy of being lost.
+- ***In Patagonia*** by Bruce Chatwin. Short chapters, strange stories, the end of the world.
+- ***Wild*** by Cheryl Strayed. Grief, and 1,100 miles on foot.
+
+## What they share
+
+None of them is really about the destination. They're about the **change in the
+traveller**, and that's the part of travel that stays with you.
+
+> Not all those who wander are lost. *(J. R. R. Tolkien)*""",
     ),
 ]

@@ -12,6 +12,12 @@ const COLORS: Record<string, string> = {
   'cloud-devops': '#38bdf8',
   'web-development': '#fbbf24',
   security: '#4ade80',
+  lifestyle: '#fb923c',
+  travel: '#818cf8',
+  food: '#ef4444',
+  'health-wellness': '#f472b6',
+  'personal-finance': '#eab308',
+  books: '#e879f9',
 }
 
 /** A coloured dot that marks a topic in lists */
