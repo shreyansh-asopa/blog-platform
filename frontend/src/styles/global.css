@@ -3,11 +3,11 @@
  * theme is just a second set of values below.
  */
 :root {
-  --bg: #fafafa;
+  --bg: #f8f6f1;
   --surface: #ffffff;
-  --surface-hover: #f1f1f3;
-  --sidebar: #ffffff;
-  --border: #e6e6ea;
+  --surface-hover: #f1ede4;
+  --sidebar: #f4f1ea;
+  --border: #e8e2d6;
   --text: #18181b;
   --text-muted: #63636b;
   --accent: #4f46e5;
