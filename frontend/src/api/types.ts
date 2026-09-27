@@ -120,3 +120,25 @@ export interface AuditLog {
   details: Record<string, unknown>
   created_at: string
 }
+
+/** Whether the editor's AI help can answer, or what's missing */
+export type AiStatus = 'ready' | 'off' | 'not_running' | 'model_missing' | 'no_key'
+
+export interface AiInfo {
+  status: AiStatus
+  /** "claude" sends posts to Anthropic's API; "ollama" runs a model on Lumen's server */
+  provider: 'claude' | 'ollama' | 'off'
+  /** e.g. "claude-sonnet-5" or "llama3.1:8b" */
+  model: string
+  /** Longer posts are refused */
+  max_chars: number
+}
+
+export type AiWriteAction = 'polish' | 'ideas' | 'recommend'
+
+export interface GrammarFix {
+  /** Exact words from the post */
+  original: string
+  fix: string
+  reason: string
+}

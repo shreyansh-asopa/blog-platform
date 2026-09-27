@@ -64,6 +64,16 @@ class UnsupportedFileTypeError(AppError):
     code = "unsupported_file_type"
 
 
+class TextTooLongError(AppError):
+    status_code = 413
+    code = "text_too_long"
+
+
+class AssistantUnavailableError(AppError):
+    status_code = 503
+    code = "ai_unavailable"
+
+
 class RateLimitedError(AppError):
     status_code = 429
     code = "rate_limited"

@@ -14,6 +14,7 @@ from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.rate_limit import RateLimiter
 from app.db.session import create_engine, create_sessionmaker
+from app.integrations.ai import create_language_model
 from app.integrations.moderation import create_moderator
 from app.integrations.storage import LocalStorage
 from app.middleware.request_context import RequestContextMiddleware
@@ -28,8 +29,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         engine = create_engine(settings)
         app.state.sessionmaker = create_sessionmaker(engine)
         # One HTTP client for the app's lifetime: it keeps connections open between calls
-        async with httpx2.AsyncClient(timeout=settings.moderation_timeout_seconds) as http:
+        async with (
+            httpx2.AsyncClient(timeout=settings.moderation_timeout_seconds) as http,
+            # Its own client: a model's answer takes far longer than a moderation check
+            httpx2.AsyncClient(timeout=settings.ai_timeout_seconds) as ai_http,
+        ):
             app.state.moderator = create_moderator(settings, http)
+            app.state.language_model = create_language_model(settings, ai_http)
             yield
         await engine.dispose()
 

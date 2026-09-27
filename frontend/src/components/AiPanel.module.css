@@ -1,0 +1,243 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 14px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 18px;
+}
+
+.title svg {
+  color: var(--accent);
+}
+
+.note {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* Two columns of large buttons, each with a line saying what it does */
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.action {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.action:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.action[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.action:disabled {
+  cursor: not-allowed;
+}
+
+.action:disabled:not([aria-pressed='true']) {
+  opacity: 0.55;
+}
+
+.actionLabel {
+  font-weight: 600;
+}
+
+.actionHint {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.working,
+.undo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface-hover);
+}
+
+.working > span:nth-child(2) {
+  flex: 1;
+}
+
+.working :global(.btn),
+.undo :global(.btn) {
+  padding: 4px 10px;
+}
+
+.undo {
+  justify-content: space-between;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 3s;
+  }
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.resultTitle {
+  margin: 0;
+  font-size: 15px;
+}
+
+/* The answer is Markdown, shown a little smaller than the post preview */
+.answer {
+  font-size: 14.5px;
+}
+
+.answer > div > :first-child {
+  margin-top: 0;
+}
+
+.resultActions,
+.fixActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fixesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fixes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fix {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.fixActions :global(.btn) {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+.change {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.change del {
+  color: var(--danger);
+  background: var(--danger-soft);
+  text-decoration-thickness: 1px;
+}
+
+.change ins {
+  padding: 0 2px;
+  border-radius: 3px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.reason {
+  margin: 0;
+  font-size: 13px;
+}
+
+.clean {
+  margin: 0;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.setup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.setup ol,
+.setup p {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.7;
+}
+
+.setup p {
+  padding-left: 0;
+}
+
+.setup code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-hover);
+  font-size: 13px;
+}
+
+@media (max-width: 480px) {
+  .actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

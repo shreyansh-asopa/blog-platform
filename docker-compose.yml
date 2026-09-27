@@ -29,6 +29,11 @@ services:
       # Inside the Compose network the database is reached by its service name
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
+      # With AI_PROVIDER=ollama, Ollama runs on the host machine, outside Docker
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+    extra_hosts:
+      # Built in on Docker Desktop (Mac, Windows); this makes it work on Linux too
+      - "host.docker.internal:host-gateway"
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:

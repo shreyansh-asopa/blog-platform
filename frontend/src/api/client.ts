@@ -124,6 +124,47 @@ export async function download(path: string, fallbackName: string): Promise<void
   URL.revokeObjectURL(url)
 }
 
+/**
+ * Posts JSON and reads the reply as text while it arrives, for answers that are written
+ * bit by bit (the AI's). `onText` gets everything received so far after each piece.
+ * Aborting `signal` stops the request; the promise then rejects with an AbortError.
+ */
+export async function streamText(
+  path: string,
+  body: object,
+  onText: (text: string) => void,
+  signal?: AbortSignal,
+): Promise<string> {
+  const headers = new Headers({ 'Content-Type': 'application/json' })
+  const token = tokenStore.get()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+
+  let response: Response
+  try {
+    response = await fetch(BASE + path, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal,
+    })
+  } catch (error) {
+    if (signal?.aborted) throw error
+    throw new ApiError(0, 'network_error', 'Could not reach the server. Is the API running?')
+  }
+  if (response.status === 401 && token) onUnauthorized()
+  if (!response.ok) throw await toApiError(response)
+  if (!response.body) throw new ApiError(0, 'invalid_response', 'The server sent no answer.')
+
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader()
+  let text = ''
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) return text
+    text += value
+    onText(text)
+  }
+}
+
 async function toApiError(response: Response): Promise<ApiError> {
   try {
     const { error } = await response.json()

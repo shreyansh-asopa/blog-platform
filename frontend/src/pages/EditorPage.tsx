@@ -6,8 +6,10 @@ import type { NavigateOptions } from 'react-router'
 import { ApiError } from '../api/client'
 import { postsApi } from '../api/endpoints'
 import type { PostDetail, PostRead } from '../api/types'
+import { useAiInfo } from '../api/useAiInfo'
 import { useTopics } from '../api/useTopics'
 import { useAuth } from '../auth/useAuth'
+import { AiPanel } from '../components/AiPanel'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { Icon } from '../components/Icon'
@@ -75,8 +77,16 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
   const [content, setContent] = useState(initial?.content ?? '')
   const [topics, setTopics] = useState<string[]>(initial ? slugsOf(initial) : [])
   const [notice, setNotice] = useState('')
-  // On narrow screens only one pane fits, so you switch between them
-  const [view, setView] = useState<'write' | 'preview'>('write')
+  // Beside the text: its preview, or the AI assistant
+  const [side, setSide] = useState<'preview' | 'ai'>('preview')
+  // On narrow screens only one pane fits, so you switch between the text and the side
+  const [view, setView] = useState<'write' | 'side'>('write')
+  const ai = useAiInfo()
+  const aiOn = ai.data !== undefined && ai.data.status !== 'off'
+  const show = (pane: 'preview' | 'ai') => {
+    setSide(pane)
+    setView('side')
+  }
 
   // Rendering Markdown on every keystroke can lag on long posts. A deferred value lets
   // React update the textarea first and catch the preview up a moment later.
@@ -209,6 +219,15 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
         </div>
 
         <div className={styles.actions}>
+          {aiOn && (
+            <button
+              className={`btn btn-ghost ${styles.aiButton}`}
+              aria-pressed={side === 'ai'}
+              onClick={() => (side === 'ai' ? setSide('preview') : show('ai'))}
+            >
+              <Icon name="sparkles" size={16} /> AI assistant
+            </button>
+          )}
           {published && (
             <>
               <Link to={`/p/${saved.slug}`} className="btn btn-ghost">
@@ -293,11 +312,20 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
         </button>
         <button
           className={styles.tab}
-          aria-pressed={view === 'preview'}
-          onClick={() => setView('preview')}
+          aria-pressed={view === 'side' && side === 'preview'}
+          onClick={() => show('preview')}
         >
           <Icon name="posts" size={16} /> Preview
         </button>
+        {aiOn && (
+          <button
+            className={styles.tab}
+            aria-pressed={view === 'side' && side === 'ai'}
+            onClick={() => show('ai')}
+          >
+            <Icon name="sparkles" size={16} /> AI
+          </button>
+        )}
       </div>
 
       <div className={styles.panes} data-view={view}>
@@ -324,7 +352,11 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
           </p>
         </div>
 
-        <section className={`card ${styles.previewPane}`} aria-label="Preview">
+        <section
+          className={`card ${styles.previewPane}`}
+          aria-label="Preview"
+          hidden={side !== 'preview'}
+        >
           {title.trim() || preview.trim() ? (
             <>
               <h1 className={styles.previewTitle}>{title || 'Untitled'}</h1>
@@ -334,6 +366,17 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
             <p className="muted">Your preview appears here as you type.</p>
           )}
         </section>
+
+        {/* Kept mounted while hidden, so switching to the preview doesn't lose an answer */}
+        {aiOn && (
+          <section
+            className={`card ${styles.previewPane}`}
+            aria-label="AI assistant"
+            hidden={side !== 'ai'}
+          >
+            <AiPanel title={title} content={content} onChange={setContent} />
+          </section>
+        )}
       </div>
     </div>
   )

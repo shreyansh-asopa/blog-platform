@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -7,6 +8,9 @@ from app.core.logging import LogFormat
 
 # The .env file lives at the repo root, shared with docker-compose.yml
 REPO_ROOT_ENV = Path(__file__).resolve().parents[3] / ".env"
+
+# The model each AI provider uses unless AI_MODEL says otherwise
+DEFAULT_MODELS = {"claude": "claude-sonnet-5", "ollama": "llama3.1:8b"}
 
 
 class Settings(BaseSettings):
@@ -51,6 +55,28 @@ class Settings(BaseSettings):
     # backend/uploads locally, /app/uploads (a Docker volume) in the container
     upload_dir: Path = Path("uploads")
     max_cover_bytes: int = 5 * 1024 * 1024
+
+    # AI writing help in the editor (see app/integrations/ai.py). "claude" uses Anthropic's
+    # API and needs a key; "ollama" is free, a model run on this machine; "off" hides it
+    ai_provider: Literal["claude", "ollama", "off"] = "claude"
+    # Empty means the provider's default (DEFAULT_MODELS)
+    ai_model: str = ""
+    # From https://console.anthropic.com. Posts are sent to Anthropic to get suggestions
+    anthropic_api_key: str | None = None
+    anthropic_url: str = "https://api.anthropic.com"
+    # Inside Docker Compose this is http://host.docker.internal:11434, the Mac itself
+    ollama_url: str = "http://localhost:11434"
+    # How much text a local model reads and writes at once, in tokens (about 4 characters each)
+    ai_context_tokens: int = 8192
+    # Posts longer than this don't fit in a local model's window with room for the answer
+    ai_max_chars: int = 12_000
+    # A local model is slow the first time, while it loads into memory
+    ai_timeout_seconds: float = 180.0
+    ai_requests_per_minute: int = 6
+
+    @property
+    def model_name(self) -> str:
+        return self.ai_model or DEFAULT_MODELS.get(self.ai_provider, "")
 
     @property
     def database_url(self) -> str:

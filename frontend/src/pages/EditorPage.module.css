@@ -47,6 +47,24 @@
   gap: 8px;
 }
 
+.aiButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aiButton[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Narrow screens switch panes with the tabs below instead */
+@media (max-width: 1100px) {
+  .aiButton {
+    display: none;
+  }
+}
+
 /* A <label> can't be disabled, so it follows its hidden file input instead */
 .addCover label[aria-disabled='true'],
 .coverActions label[aria-disabled='true'] {
@@ -218,7 +236,7 @@
   }
 
   .panes[data-view='write'] .previewPane,
-  .panes[data-view='preview'] .writePane {
+  .panes[data-view='side'] .writePane {
     display: none;
   }
 

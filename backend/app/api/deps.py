@@ -10,6 +10,7 @@ from app.core.config import Settings
 from app.core.exceptions import AuthenticationError, PermissionDeniedError, RateLimitedError
 from app.core.rate_limit import RateLimiter
 from app.core.security import decode_access_token
+from app.integrations.ai import LanguageModel
 from app.integrations.moderation import Moderator
 from app.integrations.storage import Storage
 from app.models import User
@@ -118,6 +119,24 @@ async def limit_comments(
     )
 
 
+async def limit_ai(
+    request: Request,
+    user: Annotated[User, Depends(get_current_user)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> None:
+    """Each answer keeps the model busy for a while, so one author can't queue up dozens."""
+    _enforce(
+        request,
+        f"ai:{user.id}",
+        settings.ai_requests_per_minute,
+        "That's a lot of AI requests, please wait a minute",
+    )
+
+
+def get_language_model(request: Request) -> LanguageModel:
+    return request.app.state.language_model
+
+
 def get_moderator(request: Request) -> Moderator:
     return request.app.state.moderator
 
@@ -141,3 +160,4 @@ OptionalUser = Annotated[User | None, Depends(get_optional_user)]
 Pagination = Annotated[PageParams, Depends(get_page_params)]
 ModeratorDep = Annotated[Moderator, Depends(get_moderator)]
 StorageDep = Annotated[Storage, Depends(get_storage)]
+LanguageModelDep = Annotated[LanguageModel, Depends(get_language_model)]

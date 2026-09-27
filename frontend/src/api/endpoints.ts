@@ -1,8 +1,11 @@
-import { api, download } from './client'
+import { api, download, streamText } from './client'
 import type {
+  AiInfo,
+  AiWriteAction,
   AuditAction,
   AuditLog,
   Comment,
+  GrammarFix,
   LikeStatus,
   Page,
   PostDetail,
@@ -102,4 +105,18 @@ export const adminApi = {
     api<User>(`/admin/users/${userId}/role`, { method: 'PATCH', body: { role } }),
   auditLogs: (page = 1, size = 20, action?: AuditAction) =>
     api<Page<AuditLog>>(`/admin/audit-logs${query({ page, size, action })}`),
+}
+
+/** Writing help in the editor. It only suggests: the author decides what goes in the post */
+export const aiApi = {
+  status: () => api<AiInfo>('/ai/status'),
+  grammar: (post: { title: string; content: string }) =>
+    api<{ fixes: GrammarFix[] }>('/ai/grammar', { method: 'POST', body: post }),
+  /** Streams the answer as Markdown; `onText` gets all of it so far */
+  write: (
+    action: AiWriteAction,
+    post: { title: string; content: string },
+    onText: (text: string) => void,
+    signal?: AbortSignal,
+  ) => streamText('/ai/write', { ...post, action }, onText, signal),
 }
