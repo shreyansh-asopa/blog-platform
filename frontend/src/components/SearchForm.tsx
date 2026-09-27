@@ -44,8 +44,9 @@ export function SearchForm({
         onChange={(event) => setTyped(event.target.value)}
         maxLength={200}
         autoFocus={autoFocus}
+        enterKeyHint="search"
       />
-      <button type="submit" className="btn btn-primary">
+      <button type="submit" className={`btn btn-primary ${styles.submit}`}>
         Search
       </button>
     </form>

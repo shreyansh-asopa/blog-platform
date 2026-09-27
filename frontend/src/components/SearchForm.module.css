@@ -28,3 +28,14 @@
 .input:focus-visible {
   outline: none;
 }
+
+/* On phones the keyboard's Search key submits, so the button gives its room to the placeholder */
+@media (max-width: 480px) {
+  .form {
+    padding: 12px 14px;
+  }
+
+  .form .submit {
+    display: none;
+  }
+}

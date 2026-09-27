@@ -220,3 +220,6 @@ __marimo__/
 
 # Uploaded files (post covers) from running the app locally
 backend/uploads/
+
+# Claude Code local state (worktrees, settings) never belongs in the repo
+.claude/
