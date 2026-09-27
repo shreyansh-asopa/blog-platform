@@ -300,8 +300,8 @@ Base path: `/api/v1` (except the ops checks) · Full contract: the live OpenAPI 
 |---|---|
 | Auth | `POST /auth/register`, `POST /auth/login` |
 | Users | `GET /users/me`, `GET /users/{username}` (public profile) |
-| Posts | `GET /posts?q=&author=`, `GET /posts/{slug}`, `POST /posts`, `PATCH/DELETE /posts/{id}`, `POST /posts/{id}/publish`, `POST /posts/{id}/unpublish`, `POST/DELETE /posts/{id}/cover` |
-| My content | `GET /me/posts`, `GET /me/posts/export?format=csv` |
+| Posts | `GET /posts?q=&author=&sort=`, `GET /posts/{slug}`, `POST /posts`, `PATCH/DELETE /posts/{id}`, `POST /posts/{id}/publish`, `POST /posts/{id}/unpublish`, `POST/DELETE /posts/{id}/cover` |
+| My content | `GET /me/posts?q=&sort=`, `GET /me/posts/export?format=pdf` (or `docx`) |
 | Likes | `PUT /posts/{id}/like`, `DELETE /posts/{id}/like` |
 | Comments | `GET /posts/{id}/comments`, `POST /posts/{id}/comments`, `DELETE /comments/{id}` |
 | Admin | `GET /admin/users`, `PATCH /admin/users/{id}/role`, `GET /admin/audit-logs` |

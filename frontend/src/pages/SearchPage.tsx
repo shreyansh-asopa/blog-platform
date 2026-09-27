@@ -1,11 +1,10 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
+import { useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import { postsApi } from '../api/endpoints'
 import type { TopicDetail } from '../api/types'
 import { useTopics } from '../api/useTopics'
-import { Icon } from '../components/Icon'
+import { SearchForm } from '../components/SearchForm'
 import { PostList } from '../components/PostList'
 import { TopicDot } from '../components/TopicTags'
 import { plural } from '../lib/format'
@@ -13,27 +12,32 @@ import styles from './SearchPage.module.css'
 
 const PAGE_SIZE = 10
 
+type Sort = 'newest' | 'oldest' | undefined
+
 /** Builds the search URL's query, leaving out what's empty (and page 1) */
-function searchParams(q: string, topic: string, page = 1) {
+function searchParams(q: string, topic: string, sort: Sort, page = 1) {
   const params: Record<string, string> = {}
   if (q) params.q = q
   if (topic) params.topic = topic
+  if (sort) params.sort = sort
   if (page > 1) params.page = String(page)
   return params
 }
 
-/** /search?q=…&topic=…: published posts, best match first, optionally in one topic */
+/** /search?q=…&topic=…&sort=…: published posts, best match first, optionally in one topic */
 export function SearchPage() {
   const [params, setParams] = useSearchParams()
   const q = (params.get('q') ?? '').trim()
   const topic = (params.get('topic') ?? '').trim().toLowerCase()
+  const rawSort = params.get('sort')
+  const sort: Sort = rawSort === 'newest' || rawSort === 'oldest' ? rawSort : undefined
   const page = Math.max(1, Number(params.get('page')) || 1)
   const topics = useTopics()
   const current = topics.data?.find((t) => t.slug === topic)
 
   const results = useQuery({
-    queryKey: ['posts', 'search', q, topic, page],
-    queryFn: () => postsApi.feed(page, PAGE_SIZE, { q, topic }),
+    queryKey: ['posts', 'search', q, topic, sort ?? 'best-match', page],
+    queryFn: () => postsApi.feed(page, PAGE_SIZE, { q, topic, sort }),
     // A topic on its own lists that topic's posts, newest first
     enabled: q !== '' || topic !== '',
     placeholderData: keepPreviousData,
@@ -47,7 +51,7 @@ export function SearchPage() {
     }
   }, [q, current])
 
-  const href = (n: number) => `?${new URLSearchParams(searchParams(q, topic, n))}`
+  const href = (n: number) => `?${new URLSearchParams(searchParams(q, topic, sort, n))}`
   const where = current ? ` in ${current.name}` : ''
 
   return (
@@ -59,18 +63,40 @@ export function SearchPage() {
       <SearchForm
         key={q}
         initial={q}
+        autoFocus
         // A new search is a new history entry, so Back returns to the previous one
-        onSearch={(next) => setParams(searchParams(next, topic))}
+        onSearch={(next) => setParams(searchParams(next, topic, sort))}
       />
 
-      {topics.data && (
-        <TopicFilter
-          topics={topics.data}
-          selected={topic}
-          // Picking a topic keeps the words, and starts again from page 1
-          onSelect={(next) => setParams(searchParams(q, next))}
-        />
-      )}
+      <div className={styles.controls}>
+        {topics.data && (
+          <TopicFilter
+            topics={topics.data}
+            selected={topic}
+            // Picking a topic keeps the words, and starts again from page 1
+            onSelect={(next) => setParams(searchParams(q, next, sort))}
+          />
+        )}
+
+        {(q !== '' || topic !== '') && (
+          <label className={styles.sort}>
+            <span className="visually-hidden">Sort results</span>
+            <select
+              value={sort ?? ''}
+              onChange={(event) => {
+                const next = event.target.value
+                setParams(
+                  searchParams(q, topic, next === 'newest' || next === 'oldest' ? next : undefined),
+                )
+              }}
+            >
+              <option value="">Best match</option>
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+            </select>
+          </label>
+        )}
+      </div>
 
       {q === '' && topic === '' ? (
         <div className={`muted ${styles.tips}`}>
@@ -116,38 +142,6 @@ export function SearchPage() {
         </>
       )}
     </div>
-  )
-}
-
-function SearchForm({ initial, onSearch }: { initial: string; onSearch: (q: string) => void }) {
-  // What's in the box; the URL only changes on submit
-  const [typed, setTyped] = useState(initial)
-
-  function submit(event: FormEvent) {
-    event.preventDefault()
-    onSearch(typed.trim())
-  }
-
-  return (
-    <form role="search" className={styles.form} onSubmit={submit}>
-      <label htmlFor="search-box" className="visually-hidden">
-        Search posts
-      </label>
-      <Icon name="search" />
-      <input
-        id="search-box"
-        type="search"
-        className={styles.input}
-        placeholder="Search posts…"
-        value={typed}
-        onChange={(event) => setTyped(event.target.value)}
-        maxLength={200}
-        autoFocus
-      />
-      <button type="submit" className="btn btn-primary">
-        Search
-      </button>
-    </form>
   )
 }
 

@@ -56,7 +56,7 @@ POSTS = [
 ## What's coming next
 
 1. A Markdown editor with a live preview
-2. Drafts, cover images and CSV export
+2. Drafts, cover images and PDF or Word export
 3. Search across every post
 
 > Good writing is clear thinking made visible.

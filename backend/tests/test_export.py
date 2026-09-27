@@ -1,13 +1,12 @@
-import csv
 import io
 
 import pytest
+from docx import Document
 from fastapi.testclient import TestClient
-
-from app.services.export_service import COLUMNS, safe_cell
 
 POSTS = "/api/v1/posts"
 EXPORT = "/api/v1/me/posts/export"
+DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 
 @pytest.fixture
@@ -20,77 +19,106 @@ def create_post(client: TestClient, user, title: str, content: str = "Body") -> 
     return response.json()
 
 
-def export(client: TestClient, user, **params) -> list[dict]:
-    response = client.get(EXPORT, params=params, headers=user.headers)
-    assert response.status_code == 200, response.text
-    return list(csv.DictReader(io.StringIO(response.content.decode("utf-8-sig"))))
+def docx_text(content: bytes) -> str:
+    return "\n".join(p.text for p in Document(io.BytesIO(content)).paragraphs)
 
 
-def test_export_is_a_csv_download(client: TestClient, ada):
+def test_export_defaults_to_a_pdf_download(client: TestClient, ada):
+    create_post(client, ada, "First post")
+
     response = client.get(EXPORT, headers=ada.headers)
 
     assert response.status_code == 200
-    assert response.headers["content-type"] == "text/csv; charset=utf-8"
+    assert response.headers["content-type"] == "application/pdf"
     assert response.headers["content-disposition"].startswith('attachment; filename="lumen-posts-')
-    # Starts with the UTF-8 marker Excel looks for, then the header row
-    assert response.content.startswith("﻿".encode())
-    assert response.content.decode("utf-8-sig").splitlines() == [",".join(COLUMNS)]
+    assert response.headers["content-disposition"].endswith('.pdf"')
+    # %PDF is the magic number every PDF reader looks for at the start of the file
+    assert response.content.startswith(b"%PDF")
 
 
-def test_export_has_all_my_posts_oldest_first(client: TestClient, ada, make_user):
-    first = create_post(client, ada, "First", "Line one\nline two, with a comma")
-    second = create_post(client, ada, "Zweiter Beitrag ü")
-    client.post(f"{POSTS}/{second['id']}/publish", headers=ada.headers)
+def test_word_export_contains_the_post_title(client: TestClient, ada):
+    create_post(client, ada, "My unique title", "Some content, with detail.")
+
+    response = client.get(EXPORT, params={"format": "docx"}, headers=ada.headers)
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == DOCX_TYPE
+    assert response.headers["content-disposition"].endswith('.docx"')
+    assert "My unique title" in docx_text(response.content)
+
+
+def test_export_has_all_my_posts(client: TestClient, ada, make_user):
+    create_post(client, ada, "Mine, a draft")
+    published = create_post(client, ada, "Mine, published")
+    client.post(f"{POSTS}/{published['id']}/publish", headers=ada.headers)
     create_post(client, make_user("grace"), "Not mine")
 
-    rows = export(client, ada)
+    text = docx_text(client.get(EXPORT, params={"format": "docx"}, headers=ada.headers).content)
 
-    assert [r["title"] for r in rows] == ["First", "Zweiter Beitrag ü"]
-    # Newlines and commas inside a field survive the round trip
-    assert rows[0]["content"] == "Line one\nline two, with a comma"
-    assert rows[0]["id"] == first["id"]
-    assert [r["status"] for r in rows] == ["draft", "published"]
-    assert rows[0]["published_at"] == ""
-    assert rows[1]["like_count"] == "0"
+    assert "Mine, a draft" in text
+    assert "Mine, published" in text
+    assert "Not mine" not in text
+    assert "Draft, last edited" in text
+    assert "Published" in text
 
 
 def test_export_can_be_filtered_by_status(client: TestClient, ada):
-    create_post(client, ada, "Draft")
-    published = create_post(client, ada, "Published")
+    create_post(client, ada, "Draft only")
+    published = create_post(client, ada, "Published only")
     client.post(f"{POSTS}/{published['id']}/publish", headers=ada.headers)
 
-    assert [r["title"] for r in export(client, ada, status="published")] == ["Published"]
+    response = client.get(
+        EXPORT, params={"format": "docx", "status": "published"}, headers=ada.headers
+    )
+
+    text = docx_text(response.content)
+    assert "Published only" in text
+    assert "Draft only" not in text
+    # The filter shows up in the filename too, e.g. lumen-posts-published-2026-09-27.docx
+    assert "lumen-posts-published-" in response.headers["content-disposition"]
+
+
+def test_export_can_be_filtered_by_search(client: TestClient, ada):
+    create_post(client, ada, "About gardening", "Tomatoes and herbs.")
+    create_post(client, ada, "About cooking", "Pasta and sauce.")
+
+    text = docx_text(
+        client.get(EXPORT, params={"format": "docx", "q": "garden"}, headers=ada.headers).content
+    )
+
+    assert "About gardening" in text
+    assert "About cooking" not in text
 
 
 def test_deleted_posts_are_not_exported(client: TestClient, ada):
     post = create_post(client, ada, "Gone")
     client.delete(f"{POSTS}/{post['id']}", headers=ada.headers)
 
-    assert export(client, ada) == []
+    response = client.get(EXPORT, params={"format": "docx"}, headers=ada.headers)
+    assert "Gone" not in docx_text(response.content)
 
 
-def test_formulas_are_exported_as_plain_text(client: TestClient, ada):
-    create_post(client, ada, '=HYPERLINK("http://evil.example","Click")')
+def test_markdown_is_rendered_not_left_as_symbols(client: TestClient, ada):
+    content = "# A heading\n\nSome **bold** text and a list:\n\n- one\n- two"
+    create_post(client, ada, "Formatted", content)
 
-    assert export(client, ada)[0]["title"] == '\'=HYPERLINK("http://evil.example","Click")'
+    text = docx_text(client.get(EXPORT, params={"format": "docx"}, headers=ada.headers).content)
+
+    assert "A heading" in text
+    assert "bold" in text
+    assert "one" in text and "two" in text
+
+
+@pytest.mark.parametrize("format", ["pdf", "docx"])
+def test_export_never_crashes_on_unicode_or_emoji(client: TestClient, ada, format):
+    create_post(client, ada, "Curly “quotes” — em dash", "Body with an emoji 😀 and — dashes.")
+
+    response = client.get(EXPORT, params={"format": format}, headers=ada.headers)
+
+    assert response.status_code == 200
 
 
 def test_export_requires_login_and_a_known_format(client: TestClient, ada):
     assert client.get(EXPORT).status_code == 401
+    assert client.get(EXPORT, params={"format": "csv"}, headers=ada.headers).status_code == 422
     assert client.get(EXPORT, params={"format": "xlsx"}, headers=ada.headers).status_code == 422
-
-
-@pytest.mark.parametrize(
-    ("value", "expected"),
-    [
-        ("Hello", "Hello"),
-        ("=1+1", "'=1+1"),
-        ("+1", "'+1"),
-        ("-1", "'-1"),
-        ("@SUM(A1)", "'@SUM(A1)"),
-        (None, ""),
-        (3, "3"),
-    ],
-)
-def test_safe_cell(value, expected):
-    assert safe_cell(value) == expected

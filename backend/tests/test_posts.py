@@ -122,6 +122,40 @@ def test_feed_shows_only_published_posts_newest_first(client: TestClient, ada):
     assert "content" not in body["items"][0]
 
 
+def test_feed_defaults_to_newest_first_and_can_be_reversed(client: TestClient, ada):
+    older = publish(client, ada, create_post(client, ada, title="Older"))
+    newer = publish(client, ada, create_post(client, ada, title="Newer"))
+
+    newest = client.get(POSTS).json()
+    oldest = client.get(POSTS, params={"sort": "oldest"}).json()
+
+    assert [p["id"] for p in newest["items"]] == [newer["id"], older["id"]]
+    assert [p["id"] for p in oldest["items"]] == [older["id"], newer["id"]]
+
+
+def test_feed_rejects_an_unknown_sort(client: TestClient):
+    assert client.get(POSTS, params={"sort": "random"}).status_code == 422
+
+
+def test_searching_the_feed_ranks_best_match_first_unless_sort_is_given(client: TestClient, ada):
+    # A title match outranks a body match (see test_search.py), so the older post should
+    # come first by best match despite being older -- but last once a sort is requested
+    older = publish(
+        client, ada, create_post(client, ada, title="Gardening tips", content="Some notes.")
+    )
+    newer = publish(
+        client, ada, create_post(client, ada, title="Notes", content="Mentions gardening once.")
+    )
+
+    best_match = client.get(POSTS, params={"q": "gardening"}).json()
+    newest_first = client.get(POSTS, params={"q": "gardening", "sort": "newest"}).json()
+    oldest_first = client.get(POSTS, params={"q": "gardening", "sort": "oldest"}).json()
+
+    assert [p["id"] for p in best_match["items"]] == [older["id"], newer["id"]]
+    assert [p["id"] for p in newest_first["items"]] == [newer["id"], older["id"]]
+    assert [p["id"] for p in oldest_first["items"]] == [older["id"], newer["id"]]
+
+
 def test_feed_is_paginated(client: TestClient, ada):
     for i in range(5):
         publish(client, ada, create_post(client, ada, title=f"Post {i}"))
@@ -153,6 +187,34 @@ def test_my_posts_include_drafts_and_filter_by_status(client: TestClient, ada, g
 
 def test_my_posts_requires_login(client: TestClient):
     assert client.get(MY_POSTS).status_code == 401
+
+
+def test_my_posts_can_be_searched(client: TestClient, ada):
+    create_post(client, ada, title="About gardening", content="Tomatoes and herbs.")
+    create_post(client, ada, title="About cooking", content="Mentions rust in passing.")
+
+    by_title = client.get(MY_POSTS, params={"q": "garden"}, headers=ada.headers).json()
+    by_content = client.get(MY_POSTS, params={"q": "rust"}, headers=ada.headers).json()
+
+    assert [p["title"] for p in by_title["items"]] == ["About gardening"]
+    assert [p["title"] for p in by_content["items"]] == ["About cooking"]
+
+
+def test_my_posts_search_never_matches_someone_elses_post(client: TestClient, ada, grace):
+    create_post(client, grace, title="Grace writes about gardening")
+
+    assert client.get(MY_POSTS, params={"q": "garden"}, headers=ada.headers).json()["total"] == 0
+
+
+def test_my_posts_default_to_newest_first_and_can_be_reversed(client: TestClient, ada):
+    first = create_post(client, ada, title="First")
+    second = create_post(client, ada, title="Second")
+
+    newest = client.get(MY_POSTS, headers=ada.headers).json()
+    oldest = client.get(MY_POSTS, params={"sort": "oldest"}, headers=ada.headers).json()
+
+    assert [p["id"] for p in newest["items"]] == [second["id"], first["id"]]
+    assert [p["id"] for p in oldest["items"]] == [first["id"], second["id"]]
 
 
 # --- Updating ---

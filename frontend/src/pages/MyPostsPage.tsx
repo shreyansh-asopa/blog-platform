@@ -2,25 +2,39 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useEffect } from 'react'
 import { Link, NavLink, useSearchParams } from 'react-router'
 import { meApi, postsApi } from '../api/endpoints'
-import type { PostStatus, PostSummary } from '../api/types'
+import type { ExportFormat, PostStatus, PostSummary, Sort } from '../api/types'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { Icon } from '../components/Icon'
 import { Pagination } from '../components/Pagination'
+import { SearchForm } from '../components/SearchForm'
+import { SortSelect } from '../components/SortSelect'
 import { formatDate, plural } from '../lib/format'
 import styles from './MyPostsPage.module.css'
 
 const PAGE_SIZE = 10
 
-const TABS: { label: string; to: string; status?: PostStatus }[] = [
-  { label: 'All', to: '/me/posts' },
-  { label: 'Published', to: '/me/posts?status=published', status: 'published' },
-  { label: 'Drafts', to: '/me/drafts', status: 'draft' },
+const TABS: { label: string; to: string; pathname: string; status?: PostStatus }[] = [
+  { label: 'All', to: '/me/posts', pathname: '/me/posts' },
+  {
+    label: 'Published',
+    to: '/me/posts?status=published',
+    pathname: '/me/posts',
+    status: 'published',
+  },
+  { label: 'Drafts', to: '/me/drafts', pathname: '/me/drafts', status: 'draft' },
 ]
 
-/** Your posts, newest edit first. /me/drafts is the same page, filtered to drafts. */
+const EXPORTS: { format: ExportFormat; label: string; title: string }[] = [
+  { format: 'pdf', label: 'PDF', title: 'Download these posts as a PDF document' },
+  { format: 'docx', label: 'Word', title: 'Download these posts as a Word document' },
+]
+
+/** Your posts, newest edit first, searchable. /me/drafts is the same page, filtered to drafts. */
 export function MyPostsPage({ drafts = false }: { drafts?: boolean }) {
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const page = Math.max(1, Number(params.get('page')) || 1)
+  const q = (params.get('q') ?? '').trim()
+  const sort: Sort = params.get('sort') === 'oldest' ? 'oldest' : 'newest'
   const status: PostStatus | undefined = drafts
     ? 'draft'
     : params.get('status') === 'published'
@@ -29,11 +43,14 @@ export function MyPostsPage({ drafts = false }: { drafts?: boolean }) {
   const tab = TABS.find((t) => t.status === status) ?? TABS[0]
 
   const posts = useQuery({
-    queryKey: ['posts', 'mine', status ?? 'all', page],
-    queryFn: () => meApi.posts(page, PAGE_SIZE, status),
+    queryKey: ['posts', 'mine', status ?? 'all', q, sort, page],
+    queryFn: () => meApi.posts(page, PAGE_SIZE, status, q || undefined, sort),
     placeholderData: keepPreviousData,
   })
-  const exportCsv = useMutation({ mutationFn: () => meApi.exportCsv(status) })
+  // The download holds the same posts as the list: this tab, and the search if there is one
+  const exportFile = useMutation({
+    mutationFn: (format: ExportFormat) => meApi.export(format, status, q || undefined),
+  })
 
   useEffect(() => {
     document.title = `${drafts ? 'Drafts' : 'My posts'} · Lumen`
@@ -42,10 +59,19 @@ export function MyPostsPage({ drafts = false }: { drafts?: boolean }) {
     }
   }, [drafts])
 
-  // Page links keep the current filter, e.g. /me/posts?status=published&page=2
+  /** The URL query for this tab with a search, sort and page, leaving out the defaults */
+  function filters(nextQ: string, nextSort: Sort, n = 1) {
+    const query = new URLSearchParams(tab.to.split('?')[1])
+    if (nextQ) query.set('q', nextQ)
+    if (nextSort === 'oldest') query.set('sort', nextSort)
+    if (n > 1) query.set('page', String(n))
+    return query
+  }
+
+  // Page links keep the current filters, e.g. /me/posts?status=published&q=lisbon&page=2
   const href = (n: number) => {
-    const sep = tab.to.includes('?') ? '&' : '?'
-    return n === 1 ? tab.to : `${tab.to}${sep}page=${n}`
+    const query = filters(q, sort, n)
+    return query.size ? `${tab.pathname}?${query}` : tab.pathname
   }
 
   return (
@@ -56,15 +82,18 @@ export function MyPostsPage({ drafts = false }: { drafts?: boolean }) {
           {posts.data && <p className="muted">{plural(posts.data.total, 'post')}</p>}
         </div>
         <div className={styles.headerActions}>
-          <button
-            className="btn btn-outline"
-            onClick={() => exportCsv.mutate()}
-            disabled={exportCsv.isPending || posts.data?.total === 0}
-            title="Download these posts as a spreadsheet file"
-          >
-            <Icon name="download" size={16} />
-            {exportCsv.isPending ? 'Preparing…' : 'Export CSV'}
-          </button>
+          {EXPORTS.map(({ format, label, title }) => (
+            <button
+              key={format}
+              className="btn btn-outline"
+              onClick={() => exportFile.mutate(format)}
+              disabled={exportFile.isPending || posts.data?.total === 0}
+              title={title}
+            >
+              <Icon name="download" size={16} />
+              {exportFile.isPending && exportFile.variables === format ? 'Preparing…' : label}
+            </button>
+          ))}
           <Link to="/write" className="btn btn-primary">
             <Icon name="pen" size={16} /> Write
           </Link>
@@ -86,7 +115,19 @@ export function MyPostsPage({ drafts = false }: { drafts?: boolean }) {
         ))}
       </nav>
 
-      {exportCsv.isError && <ErrorMessage error={exportCsv.error} />}
+      <div className={styles.toolbar}>
+        {/* key: a new ?q (Back, Forward, a tab) gives a fresh box showing it */}
+        <SearchForm
+          key={q}
+          id="my-posts-search"
+          initial={q}
+          placeholder="Search your own stories…"
+          onSearch={(next) => setParams(filters(next, sort))}
+        />
+        <SortSelect value={sort} by="edited" onChange={(next) => setParams(filters(q, next))} />
+      </div>
+
+      {exportFile.isError && <ErrorMessage error={exportFile.error} />}
       {posts.isPending && <p className="muted">Loading your posts…</p>}
       {posts.isError && <ErrorMessage error={posts.error} />}
 
@@ -95,11 +136,13 @@ export function MyPostsPage({ drafts = false }: { drafts?: boolean }) {
           <p>
             {page > 1
               ? 'No posts on this page.'
-              : status === 'draft'
-                ? 'No drafts. Everything you have started is published.'
-                : status === 'published'
-                  ? 'Nothing published yet.'
-                  : 'You have not written anything yet.'}
+              : q
+                ? `None of your posts match "${q}".`
+                : status === 'draft'
+                  ? 'No drafts. Everything you have started is published.'
+                  : status === 'published'
+                    ? 'Nothing published yet.'
+                    : 'You have not written anything yet.'}
           </p>
           <Link to="/write" className="btn btn-primary">
             Write a post

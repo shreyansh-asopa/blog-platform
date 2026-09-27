@@ -22,7 +22,7 @@ class RequestContextMiddleware:
     """Gives every request an id, logs one line per request, and turns crashes into clean 500s.
 
     Written as plain ASGI (a function of scope/receive/send) rather than Starlette's
-    BaseHTTPMiddleware, so streamed responses like the CSV export pass straight through.
+    BaseHTTPMiddleware, so streamed responses pass straight through.
     """
 
     def __init__(self, app: ASGIApp):

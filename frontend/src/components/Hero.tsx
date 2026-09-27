@@ -31,7 +31,7 @@ const FEATURES: { icon: IconName; title: string; text: string }[] = [
   {
     icon: 'download',
     title: 'Never locked in',
-    text: 'Export every post you have written to CSV whenever you like.',
+    text: 'Export every post you have written as a PDF or Word document whenever you like.',
   },
 ]
 

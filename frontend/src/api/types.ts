@@ -39,6 +39,12 @@ export interface Author {
 
 export type PostStatus = 'draft' | 'published'
 
+/** How a list of posts is ordered: most recently first, or least recently first */
+export type Sort = 'newest' | 'oldest'
+
+/** A downloadable format for GET /me/posts/export */
+export type ExportFormat = 'pdf' | 'docx'
+
 /** A subject posts are filed under. The list is fixed; see GET /topics */
 export interface Topic {
   slug: string

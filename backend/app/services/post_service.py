@@ -18,7 +18,7 @@ from app.integrations.storage import Storage, detect_image_type
 from app.models import AuditAction, Post, PostStatus, Topic, User
 from app.permissions import Permission, has_permission
 from app.repositories.audit_log_repository import AuditLogRepository
-from app.repositories.post_repository import PostRepository
+from app.repositories.post_repository import PostRepository, Sort
 from app.repositories.topic_repository import TopicRepository
 from app.schemas.pagination import PageParams
 from app.schemas.post import PostCreate, PostUpdate
@@ -45,13 +45,19 @@ class PostService:
         search: str | None = None,
         author: str | None = None,
         topic: str | None = None,
+        sort: Sort | None = None,
     ) -> tuple[list[Post], int]:
-        return await self.posts.list_published(params, search, author, topic)
+        return await self.posts.list_published(params, search, author, topic, sort)
 
     async def list_mine(
-        self, user: User, params: PageParams, status: PostStatus | None
+        self,
+        user: User,
+        params: PageParams,
+        status: PostStatus | None,
+        search: str | None = None,
+        sort: Sort = "newest",
     ) -> tuple[list[Post], int]:
-        return await self.posts.list_by_author(user.id, params, status)
+        return await self.posts.list_by_author(user.id, params, status, search, sort)
 
     async def get_by_slug(self, slug: str, viewer: User | None) -> Post:
         post = await self.posts.get_by_slug(slug)

@@ -3,6 +3,7 @@ import type {
   AuditAction,
   AuditLog,
   Comment,
+  ExportFormat,
   LikeStatus,
   Page,
   PostDetail,
@@ -12,6 +13,7 @@ import type {
   PostSummary,
   Profile,
   Role,
+  Sort,
   Token,
   TopicDetail,
   User,
@@ -30,9 +32,13 @@ export const authApi = {
 }
 
 export const postsApi = {
-  /** `q` searches (best match first); `author` is a username; `topic` is a topic slug */
-  feed: (page = 1, size = 20, filters: { q?: string; author?: string; topic?: string } = {}) =>
-    api<Page<PostSummary>>(`/posts${query({ page, size, ...filters })}`),
+  /** `q` searches (best match first, unless `sort` is given); `author` is a username;
+   * `topic` is a topic slug; `sort` is "newest" (the default) or "oldest" */
+  feed: (
+    page = 1,
+    size = 20,
+    filters: { q?: string; author?: string; topic?: string; sort?: Sort } = {},
+  ) => api<Page<PostSummary>>(`/posts${query({ page, size, ...filters })}`),
   bySlug: (slug: string) => api<PostDetail>(`/posts/${encodeURIComponent(slug)}`),
   like: (postId: string) => api<LikeStatus>(`/posts/${postId}/like`, { method: 'PUT' }),
   unlike: (postId: string) => api<LikeStatus>(`/posts/${postId}/like`, { method: 'DELETE' }),
@@ -53,13 +59,13 @@ export const postsApi = {
 }
 
 export const meApi = {
-  /** Your own posts, drafts included, most recently edited first */
-  posts: (page = 1, size = 20, status?: PostStatus) =>
-    api<Page<PostSummary>>(
-      `/me/posts?page=${page}&size=${size}${status ? `&status=${status}` : ''}`,
-    ),
-  exportCsv: (status?: PostStatus) =>
-    download(`/me/posts/export?format=csv${status ? `&status=${status}` : ''}`, 'lumen-posts.csv'),
+  /** Your own posts, drafts included. `q` searches them; `sort` is "newest" (the default)
+   * or "oldest", by when each was last edited */
+  posts: (page = 1, size = 20, status?: PostStatus, q?: string, sort?: Sort) =>
+    api<Page<PostSummary>>(`/me/posts${query({ page, size, status, q, sort })}`),
+  /** Downloads all matching posts (drafts included) as a PDF or Word file */
+  export: (format: ExportFormat, status?: PostStatus, q?: string) =>
+    download(`/me/posts/export${query({ format, status, q })}`, `lumen-posts.${format}`),
 }
 
 export const commentsApi = {

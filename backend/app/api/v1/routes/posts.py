@@ -12,6 +12,7 @@ from app.api.deps import (
     StorageDep,
 )
 from app.core.exceptions import FileTooLargeError
+from app.repositories.post_repository import Sort
 from app.schemas.pagination import Page
 from app.schemas.post import PostCreate, PostDetail, PostRead, PostSummary, PostUpdate
 from app.services.like_service import LikeService
@@ -30,9 +31,13 @@ async def list_posts(
     ] = None,
     author: Annotated[str | None, Query(max_length=50, description="A username")] = None,
     topic: Annotated[str | None, Query(max_length=40, description="A topic slug")] = None,
+    sort: Sort | None = None,
 ) -> Page[PostSummary]:
-    """The public feed: published posts, newest first. With `q`, best matches first."""
-    posts, total = await PostService(db).list_published(params, q, author, topic)
+    """The public feed: published posts, newest first, or oldest first with ?sort=oldest.
+
+    With `q`, results rank best match first instead, unless `sort` is also given.
+    """
+    posts, total = await PostService(db).list_published(params, q, author, topic, sort)
     return Page(
         items=[PostSummary.model_validate(p) for p in posts],
         total=total,

@@ -12,41 +12,29 @@
   letter-spacing: -0.02em;
 }
 
-/* One rounded box holding the icon, the text field and the button */
-.form {
+/* Topic chips and the sort dropdown, side by side, wrapping if either needs the room */
+.controls {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  padding: 6px 6px 6px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text-muted);
-}
-
-.form:focus-within {
-  border-color: var(--accent);
-}
-
-.input {
-  flex: 1;
-  min-width: 0;
-  padding: 6px 0;
-  border: 0;
-  background: none;
-  color: var(--text);
-  font: inherit;
-  font-size: 16px;
-}
-
-.input:focus-visible {
-  outline: none;
 }
 
 .filter {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.sort select {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
 }
 
 .tips p {

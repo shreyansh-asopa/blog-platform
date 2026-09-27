@@ -152,3 +152,25 @@
     margin-left: -12px;
   }
 }
+
+/* Search takes the room; the sort dropdown sits at its right */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.toolbar > form {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .toolbar > label {
+    align-self: flex-end;
+  }
+}
