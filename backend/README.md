@@ -26,7 +26,7 @@ uv sync                          # install dependencies into .venv
 uv run uvicorn app.main:app --reload
 ```
 
-## Endpoints so far
+## Endpoints
 
 | Method | Path | Auth | What it does |
 |---|---|---|---|
@@ -35,7 +35,9 @@ uv run uvicorn app.main:app --reload
 | POST | `/api/v1/auth/register` | — | Create an account (JSON: `email`, `username`, `password`) |
 | POST | `/api/v1/auth/login` | — | Get a token (form: `username` = username or email, `password`) |
 | GET | `/api/v1/users/me` | Bearer token | The logged-in user |
-| GET | `/api/v1/posts?page=&size=` | — | Published posts, newest first (no `content`, max `size` 100) |
+| GET | `/api/v1/users/{username}` | — | An author's public profile |
+| GET | `/api/v1/posts?q=&author=&topic=&page=&size=` | — | Published posts, newest first (no `content`, max `size` 100); `q` searches, `author` and `topic` filter |
+| GET | `/api/v1/posts/trending?limit=` | — | Published posts with the most likes plus comments in the last 7 days |
 | GET | `/api/v1/posts/{slug}` | Optional | One post; drafts only for their author or an admin |
 | POST | `/api/v1/posts` | Bearer token | Create a draft (JSON: `title`, `content`, optional `excerpt`) |
 | PATCH | `/api/v1/posts/{id}` | Author or admin | Change any of `title`, `content`, `excerpt` |
@@ -45,6 +47,9 @@ uv run uvicorn app.main:app --reload
 | POST | `/api/v1/posts/{id}/cover` | Author or admin | Set or replace the cover (multipart field `file`: JPEG, PNG or WebP, max 5 MB) |
 | DELETE | `/api/v1/posts/{id}/cover` | Author or admin | Remove the cover |
 | GET | `/uploads/covers/{name}` | — | The cover image itself (the URL is in the post's `cover_image`) |
+| GET | `/api/v1/topics` | — | All topics |
+| GET | `/api/v1/topics/trending?limit=` | — | Topics whose posts got the most likes and comments in the last 7 days |
+| GET | `/api/v1/topics/{slug}` | — | One topic |
 | PUT | `/api/v1/posts/{id}/like` | Bearer token | Like a published post (not your own); repeating is harmless |
 | DELETE | `/api/v1/posts/{id}/like` | Bearer token | Remove your like |
 | GET | `/api/v1/posts/{id}/comments?page=&size=` | Optional | A post's comments, oldest first |
@@ -52,8 +57,13 @@ uv run uvicorn app.main:app --reload
 | DELETE | `/api/v1/comments/{id}` | Comment author, post author or admin | Soft delete a comment |
 | GET | `/api/v1/me/posts?status=` | Bearer token | Your own posts, drafts included; filter with `draft`/`published` |
 | GET | `/api/v1/me/posts/export?format=csv&status=` | Bearer token | Download all your posts as a CSV file |
+| GET | `/api/v1/admin/users?search=&role=&page=&size=` | Admin | All users |
 | PATCH | `/api/v1/admin/users/{id}/role` | Admin | Make a user `admin` or `user` (JSON: `role`); not your own |
 | GET | `/api/v1/admin/audit-logs?action=&actor_id=&page=&size=` | Admin | Who did what, newest first |
+| GET | `/api/v1/writing/status` | Bearer token | Which writing checks are set up (`ai` is `gemini`, `groq` or `null`) |
+| POST | `/api/v1/writing/grammar` | Bearer token | Word mistakes and AI sentence fixes (JSON: `text`) |
+| POST | `/api/v1/writing/tone` | Bearer token | How the text sounds, with rewrites (JSON: `text`, `target`) |
+| POST | `/api/v1/writing/simplify` | Bearer token | A shorter version of one sentence (JSON: `sentence`) |
 
 Post rules: the slug follows a draft's title but is frozen once published, so shared links
 keep working. The excerpt is generated from the content unless you set your own.
@@ -63,6 +73,13 @@ Every post includes `like_count` and `comment_count`; `GET /posts/{slug}` also s
 Comments are checked by moderation before they are saved (422 `content_rejected` if refused).
 By default a built-in word list decides. Set `MODERATION_API_URL` in `.env` to use an external
 API instead; if it is down, comments are accepted unchecked and a warning is logged.
+
+Writing checks: grammar asks LanguageTool (free, no key) and, when an AI key is set, Google
+Gemini or Groq at the same time; if one of them is down, the other's results still come
+back with a note. The AI calls use the providers' OpenAI-style APIs
+(`app/integrations/llm.py`), and a fallback model is tried when the first is busy, out of
+quota or retired. Nothing sent to the checks is stored. They share a limit of 10 checks per
+minute per user, and a post can be at most 20,000 characters.
 
 Try it in the browser at `/docs`: register, then click **Authorize**, log in, and call `/users/me`.
 
@@ -119,10 +136,12 @@ prefixed with `'`, and the file starts with a UTF-8 byte-order mark so Excel rea
 - **CORS**: only the origins in `CORS_ORIGINS` may call the API from a browser.
 - **GZip** for responses over 1 KB.
 - **Rate limits** (429 `rate_limited` with `Retry-After`): 5 login attempts per minute per
-  IP address and username, 10 comments per minute per user. Counts are kept in memory,
+  IP address and username, 10 comments and 10 writing checks per minute per user. Counts are kept in memory,
   so they are per process and reset on restart.
 
-Admins and the audit log: the role is read from the database on every request, so promoting
+## Admins and the audit log
+
+The role is read from the database on every request, so promoting
 or demoting someone takes effect at once, even with a token they already have. Role changes,
 every post or comment deletion, and admins editing or (un)publishing someone else's post are
 recorded in `audit_logs`, in the same transaction as the change itself. Entries survive the
