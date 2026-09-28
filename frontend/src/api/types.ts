@@ -125,3 +125,51 @@ export interface AuditLog {
   details: Record<string, unknown>
   created_at: string
 }
+
+export type AiProvider = 'gemini' | 'groq'
+
+/**
+ * Which writing checks work. Sentence fixes, tone and "Simplify" need an AI key on the
+ * server (Gemini or Groq); `ai` says which one the text goes to
+ */
+export interface WritingStatus {
+  grammar: 'ready'
+  tone: 'ready' | 'no_key'
+  ai: AiProvider | null
+  max_chars: number
+}
+
+export type IssueCategory = 'spelling' | 'grammar' | 'punctuation' | 'style'
+
+/** A mistake LanguageTool found. offset and length count characters in the text sent */
+export interface GrammarIssue {
+  offset: number
+  length: number
+  message: string
+  category: IssueCategory
+  replacements: string[]
+}
+
+export type ToneTarget = 'professional' | 'friendly' | 'confident' | 'casual'
+
+/** A rewrite the AI suggests. `original` appears word for word in the post */
+export interface Suggestion {
+  original: string
+  fix: string
+  reason: string
+}
+
+export interface GrammarResult {
+  /** Word-level mistakes (LanguageTool) */
+  issues: GrammarIssue[]
+  /** Whole sentences the AI corrected; empty when it isn't set up */
+  sentences: Suggestion[]
+  /** Set when one of the two checkers failed but the other answered */
+  note: string | null
+}
+
+export interface ToneResult {
+  tone: string
+  explanation: string
+  suggestions: Suggestion[]
+}

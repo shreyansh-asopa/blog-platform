@@ -69,6 +69,18 @@ class UnsupportedFileTypeError(AppError):
     code = "unsupported_file_type"
 
 
+class TextTooLongError(AppError):
+    status_code = 413
+    code = "text_too_long"
+
+
+class CheckUnavailableError(AppError):
+    """A writing check's outside service is down, or not set up."""
+
+    status_code = 503
+    code = "check_unavailable"
+
+
 class RateLimitedError(AppError):
     status_code = 429
     code = "rate_limited"

@@ -8,6 +8,7 @@ import { useEffect, useImperativeHandle, useRef, useState } from 'react'
 import type { ReactNode, Ref } from 'react'
 import { Icon, type IconName } from './Icon'
 import prose from './Markdown.module.css'
+import { CheckBar } from './writing/CheckBar'
 import styles from './RichEditor.module.css'
 
 // Fixed choices keep posts consistent. The browser reports colours as rgb(), so they're
@@ -118,6 +119,7 @@ export function RichEditor({ id, initialHtml, placeholder, onChange, ref }: Prop
   return (
     <div className={styles.editor}>
       <Toolbar editor={editor} controls={id} />
+      <CheckBar editor={editor} />
       <EditorContent editor={editor} />
     </div>
   )

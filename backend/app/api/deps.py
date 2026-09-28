@@ -10,6 +10,8 @@ from app.core.config import Settings
 from app.core.exceptions import AuthenticationError, PermissionDeniedError, RateLimitedError
 from app.core.rate_limit import RateLimiter
 from app.core.security import decode_access_token
+from app.integrations.grammar import GrammarChecker
+from app.integrations.llm import LanguageModel
 from app.integrations.moderation import Moderator
 from app.integrations.storage import Storage
 from app.models import User
@@ -118,6 +120,29 @@ async def limit_comments(
     )
 
 
+async def limit_writing(
+    request: Request,
+    user: Annotated[User, Depends(get_current_user)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> None:
+    """The writing checks call free outside services with their own limits, so each
+    writer gets a share instead of one person using them all up."""
+    _enforce(
+        request,
+        f"writing:{user.id}",
+        settings.writing_checks_per_minute,
+        "Too many checks, please wait a moment",
+    )
+
+
+def get_grammar_checker(request: Request) -> GrammarChecker:
+    return request.app.state.grammar_checker
+
+
+def get_language_model(request: Request) -> LanguageModel:
+    return request.app.state.language_model
+
+
 def get_moderator(request: Request) -> Moderator:
     return request.app.state.moderator
 
@@ -141,3 +166,5 @@ OptionalUser = Annotated[User | None, Depends(get_optional_user)]
 Pagination = Annotated[PageParams, Depends(get_page_params)]
 ModeratorDep = Annotated[Moderator, Depends(get_moderator)]
 StorageDep = Annotated[Storage, Depends(get_storage)]
+GrammarCheckerDep = Annotated[GrammarChecker, Depends(get_grammar_checker)]
+LanguageModelDep = Annotated[LanguageModel, Depends(get_language_model)]

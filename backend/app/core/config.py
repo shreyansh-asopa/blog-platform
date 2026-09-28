@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     # Rate limits, per minute. Login counts attempts per IP address and username
     login_attempts_per_minute: int = 5
     comments_per_minute: int = 10
+    writing_checks_per_minute: int = 10
 
     postgres_user: str
     postgres_password: str
@@ -51,6 +52,27 @@ class Settings(BaseSettings):
     # backend/uploads locally, /app/uploads (a Docker volume) in the container
     upload_dir: Path = Path("uploads")
     max_cover_bytes: int = 5 * 1024 * 1024
+
+    # "Check your writing" in the editor (see app/integrations/grammar.py and llm.py).
+    # LanguageTool's free public API finds word-level mistakes and needs no key. The AI
+    # (sentence fixes, tone, simplifying) is Google Gemini when GEMINI_API_KEY is set,
+    # else Groq when GROQ_API_KEY is set; with neither, those checks are simply off
+    languagetool_url: str = "https://api.languagetool.org"
+    languagetool_language: str = "en-US"
+    gemini_api_key: str | None = None
+    gemini_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
+    # Flash-Lite has the biggest free allowance (full Flash allows only 20 requests a day).
+    # The fallback is tried when the first model is overloaded, out of quota or retired
+    gemini_model: str = "gemini-3.1-flash-lite"
+    gemini_fallback_model: str | None = "gemini-flash-latest"
+    groq_api_key: str | None = None
+    groq_url: str = "https://api.groq.com/openai/v1"
+    groq_model: str = "llama-3.3-70b-versatile"
+    groq_fallback_model: str | None = "llama-3.1-8b-instant"
+    writing_timeout_seconds: float = 30.0
+    writing_retries: int = 1
+    # LanguageTool's free API takes up to 20 KB per check
+    writing_max_chars: int = 20_000
 
     @property
     def database_url(self) -> str:
