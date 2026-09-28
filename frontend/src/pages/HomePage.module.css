@@ -14,6 +14,17 @@
   margin-inline: 0;
 }
 
+/* Wide screens: trending posts sit in a column beside the latest posts */
+@media (min-width: 1280px) {
+  .feed {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+    gap: 32px;
+    max-width: none;
+  }
+}
+
 .feedHeader {
   display: flex;
   align-items: baseline;

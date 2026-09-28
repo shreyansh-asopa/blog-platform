@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router'
-import { useTopics } from '../api/useTopics'
+import { useTopics, useTrendingTopics } from '../api/useTopics'
 import { useAuth } from '../auth/useAuth'
 import { useTheme, type ThemeChoice } from '../theme/useTheme'
 import { Avatar } from './Avatar'
 import { Icon, type IconName } from './Icon'
+import { TopicPicker } from './TopicPicker'
 import { TopicDot } from './TopicTags'
 import styles from './Layout.module.css'
 
@@ -21,7 +22,12 @@ function Logo({ tagline = false }: { tagline?: boolean }) {
   return (
     <Link to="/" className={styles.logo}>
       <span className={styles.wordmark}>
-        <span aria-hidden>✦</span> Lumen
+        <span className={styles.mark} aria-hidden>
+          <svg viewBox="0 0 24 24">
+            <path d="M12 3Q14 10 21 12Q14 14 12 21Q10 14 3 12Q10 10 12 3Z" />
+          </svg>
+        </span>
+        <span className={styles.name}>Lumen</span>
       </span>
       {tagline && <span className={styles.tagline}>{TAGLINE}</span>}
     </Link>
@@ -32,6 +38,8 @@ export function Layout() {
   const { user, loading, logout } = useAuth()
   const theme = useTheme()
   const topics = useTopics()
+  const trending = useTrendingTopics()
+  const [pickerOpen, setPickerOpen] = useState(false)
   // On phones the sidebar is a drawer that slides in over the page
   const [menuOpen, setMenuOpen] = useState(false)
   const close = () => setMenuOpen(false)
@@ -102,12 +110,12 @@ export function Layout() {
         </nav>
 
         {/* Hidden until loaded, and if it fails: the rest of the sidebar still works */}
-        {topics.data && topics.data.length > 0 && (
+        {trending.data && trending.data.length > 0 && (
           <nav className={styles.topics} aria-labelledby="topics-heading" onClick={close}>
             <h2 id="topics-heading" className={styles.sectionHeading}>
-              Topics
+              Trending topics
             </h2>
-            {topics.data.map((topic) => (
+            {trending.data.map((topic) => (
               <NavLink key={topic.slug} to={`/t/${topic.slug}`} className={navClass}>
                 <TopicDot slug={topic.slug} />
                 <span className={styles.topicName}>{topic.name}</span>
@@ -117,7 +125,20 @@ export function Layout() {
                 </span>
               </NavLink>
             ))}
+            {topics.data && topics.data.length > trending.data.length && (
+              <button className={styles.navLink} onClick={() => setPickerOpen(true)}>
+                <Icon name="grid" /> More
+              </button>
+            )}
           </nav>
+        )}
+
+        {pickerOpen && topics.data && (
+          <TopicPicker
+            topics={topics.data}
+            trending={trending.data?.map((topic) => topic.slug) ?? []}
+            onClose={() => setPickerOpen(false)}
+          />
         )}
 
         <div className={styles.sidebarBottom}>

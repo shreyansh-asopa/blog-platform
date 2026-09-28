@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useDeferredValue, useEffect, useRef, useState } from 'react'
+import { marked } from 'marked'
+import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { Link, useBlocker, useLocation, useNavigate, useParams } from 'react-router'
 import type { NavigateOptions } from 'react-router'
@@ -10,9 +11,9 @@ import { useTopics } from '../api/useTopics'
 import { useAuth } from '../auth/useAuth'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { ErrorMessage } from '../components/ErrorMessage'
-import { Icon } from '../components/Icon'
-import { Markdown } from '../components/Markdown'
+import { RichEditor, type RichEditorHandle } from '../components/RichEditor'
 import { TopicDot } from '../components/TopicTags'
+import { cleanHtml } from '../lib/html'
 import { NotFoundPage } from './PlaceholderPage'
 import styles from './EditorPage.module.css'
 
@@ -27,6 +28,20 @@ const slugsOf = (post: PostRead) => post.topics.map((t) => t.slug)
 /** Same topics, in any order */
 const sameTopics = (a: string[], b: string[]) =>
   a.length === b.length && a.every((slug) => b.includes(slug))
+
+/**
+ * A post as HTML for the editor. Older posts are Markdown: they're converted here, and
+ * saved as HTML from then on. The editor has two heading sizes, so # becomes the larger
+ * and #### to ###### the smaller.
+ */
+function postToHtml(post: Pick<PostRead, 'content' | 'content_format'>): string {
+  if (post.content_format === 'html') return cleanHtml(post.content)
+  const html = marked
+    .parse(post.content, { async: false, gfm: true })
+    .replace(/<(\/?)h1>/g, '<$1h2>')
+    .replace(/<(\/?)h[4-6]>/g, '<$1h3>')
+  return cleanHtml(html)
+}
 
 interface EditorState {
   /** Keeps the same editor on screen when saving changes the URL (see EditorPage) */
@@ -67,27 +82,28 @@ type Action = 'save' | 'publish' | 'unpublish'
 function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead }) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const contentRef = useRef<HTMLTextAreaElement>(null)
+  const contentRef = useRef<RichEditorHandle>(null)
 
   // `saved` is the post as the server last confirmed it; title, content and topics are the form
   const [saved, setSaved] = useState<PostRead | null>(initial ?? null)
   const [title, setTitle] = useState(initial?.title ?? '')
-  const [content, setContent] = useState(initial?.content ?? '')
+  // The editor's HTML, and its words alone. Older Markdown posts are converted on the way in.
+  const [startHtml] = useState(() => (initial ? postToHtml(initial) : ''))
+  const [content, setContent] = useState<string | null>(null)
+  const [text, setText] = useState('')
+  // The content as last saved, in the editor's own HTML. The editor tidies HTML as it loads
+  // it, and the server writes styles a little differently, so neither saved.content nor
+  // startHtml would do: comparing with them would show changes nobody made.
+  const [baseline, setBaseline] = useState<string | null>(null)
   const [topics, setTopics] = useState<string[]>(initial ? slugsOf(initial) : [])
   const [notice, setNotice] = useState('')
-  // On narrow screens only one pane fits, so you switch between them
-  const [view, setView] = useState<'write' | 'preview'>('write')
 
-  // Rendering Markdown on every keystroke can lag on long posts. A deferred value lets
-  // React update the textarea first and catch the preview up a moment later.
-  const preview = useDeferredValue(content)
-
+  // null until the editor has started and reported what it loaded
+  const bodyChanged = content !== null && content !== baseline
   const dirty = saved
-    ? title.trim() !== saved.title ||
-      content !== saved.content ||
-      !sameTopics(topics, slugsOf(saved))
-    : title !== '' || content !== '' || topics.length > 0
-  const complete = title.trim() !== '' && content.trim() !== ''
+    ? title.trim() !== saved.title || bodyChanged || !sameTopics(topics, slugsOf(saved))
+    : title !== '' || bodyChanged || topics.length > 0
+  const complete = title.trim() !== '' && text.trim() !== ''
   const published = saved?.status === 'published'
 
   useEffect(() => {
@@ -141,8 +157,10 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
       // Save first, so publishing never loses the latest edits. Each step is remembered
       // straight away: if publishing then fails, a retry won't create a second copy.
       if (!post || dirty) {
-        const data = { title, content, topics }
+        const body = content ?? ''
+        const data = { title, content: body, content_format: 'html' as const, topics }
         const next = post ? await postsApi.update(post.id, data) : await postsApi.create(data)
+        setBaseline(body)
         remember(next, post)
         post = next
       }
@@ -283,58 +301,24 @@ function Editor({ editorKey, initial }: { editorKey: string; initial?: PostRead 
 
       <TopicPicker selected={topics} onChange={setTopics} disabled={busy} />
 
-      <div className={styles.tabs}>
-        <button
-          className={styles.tab}
-          aria-pressed={view === 'write'}
-          onClick={() => setView('write')}
-        >
-          <Icon name="pen" size={16} /> Write
-        </button>
-        <button
-          className={styles.tab}
-          aria-pressed={view === 'preview'}
-          onClick={() => setView('preview')}
-        >
-          <Icon name="posts" size={16} /> Preview
-        </button>
-      </div>
-
-      <div className={styles.panes} data-view={view}>
-        <div className={styles.writePane}>
-          <label className="visually-hidden" htmlFor="post-content">
-            Content, in Markdown
-          </label>
-          <textarea
-            id="post-content"
-            ref={contentRef}
-            className={styles.content}
-            value={content}
-            onChange={(event) => setContent(event.target.value)}
-            placeholder={
-              'Write your post here…\n\nMarkdown works: ## headings, **bold**, `code`, lists, > quotes and more.'
-            }
-            maxLength={CONTENT_MAX}
-            spellCheck
-          />
-          <p className={`muted ${styles.hint}`}>
-            Markdown supported. <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>S</kbd> saves.
-            {content.length > CONTENT_MAX * 0.9 &&
-              ` ${(CONTENT_MAX - content.length).toLocaleString()} characters left.`}
-          </p>
-        </div>
-
-        <section className={`card ${styles.previewPane}`} aria-label="Preview">
-          {title.trim() || preview.trim() ? (
-            <>
-              <h1 className={styles.previewTitle}>{title || 'Untitled'}</h1>
-              <Markdown>{preview}</Markdown>
-            </>
-          ) : (
-            <p className="muted">Your preview appears here as you type.</p>
-          )}
-        </section>
-      </div>
+      <RichEditor
+        id="post-content"
+        ref={contentRef}
+        initialHtml={startHtml}
+        placeholder="Write your post here…"
+        onChange={(html, words) => {
+          // The first report is what the editor loaded: that's the saved state, not a change
+          setBaseline((current) => current ?? html)
+          setContent(html)
+          setText(words)
+        }}
+      />
+      <p className={`muted ${styles.hint}`}>
+        Select text to format it. <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>S</kbd> saves.
+        {content !== null &&
+          content.length > CONTENT_MAX * 0.9 &&
+          ` ${Math.max(0, CONTENT_MAX - content.length).toLocaleString()} characters left.`}
+      </p>
     </div>
   )
 }

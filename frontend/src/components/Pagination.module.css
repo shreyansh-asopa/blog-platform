@@ -7,6 +7,65 @@
   font-size: 14px;
 }
 
+.pagination > :first-child {
+  justify-self: start;
+}
+
 .pagination > :last-child {
   justify-self: end;
+}
+
+.numbers {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+}
+
+.number:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.current,
+.current:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.gap {
+  padding: 0 4px;
+  color: var(--text-muted);
+}
+
+.summary {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  .numbers {
+    display: none;
+  }
+
+  .summary {
+    display: inline;
+  }
 }

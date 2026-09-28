@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.routes import admin, auth, comments, likes, me, posts, topics, users
+from app.api.v1.routes import admin, auth, comments, likes, me, posts, topics, users, writing
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(auth.router)
@@ -11,3 +11,4 @@ api_router.include_router(topics.router)
 api_router.include_router(likes.router)
 api_router.include_router(comments.router)
 api_router.include_router(admin.router)
+api_router.include_router(writing.router)

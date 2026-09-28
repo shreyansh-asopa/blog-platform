@@ -8,7 +8,7 @@ import { Avatar } from '../components/Avatar'
 import { Comments } from '../components/Comments'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { LikeButton } from '../components/LikeButton'
-import { Markdown } from '../components/Markdown'
+import { PostBody } from '../components/PostBody'
 import { TopicTags } from '../components/TopicTags'
 import { formatDate } from '../lib/format'
 import { NotFoundPage } from './PlaceholderPage'
@@ -60,7 +60,7 @@ export function PostPage() {
           <h1 className={styles.title}>{p.title}</h1>
           <TopicTags topics={p.topics} className={styles.topics} />
 
-          <Markdown>{p.content}</Markdown>
+          <PostBody post={p} />
 
           <footer className={styles.actions}>
             <LikeButton post={p} />

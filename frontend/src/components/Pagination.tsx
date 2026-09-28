@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { pageNumbers } from '../lib/pages'
 import styles from './Pagination.module.css'
 
 interface Props {
@@ -9,7 +10,7 @@ interface Props {
   href: (page: number) => string
 }
 
-/** Previous / next links. Pages live in the URL, so they can be shared and survive a reload */
+/** Previous / next links and page numbers. Pages live in the URL, so they can be shared and survive a reload */
 export function Pagination({ page, size, total, href }: Props) {
   const pages = Math.max(1, Math.ceil(total / size))
   if (pages === 1) return null
@@ -23,7 +24,28 @@ export function Pagination({ page, size, total, href }: Props) {
       ) : (
         <span />
       )}
-      <span className="muted">
+      <ol className={styles.numbers}>
+        {pageNumbers(page, pages).map((n, i) =>
+          n === null ? (
+            <li key={`gap-${i}`} className={styles.gap} aria-hidden>
+              …
+            </li>
+          ) : (
+            <li key={n}>
+              <Link
+                to={href(n)}
+                className={n === page ? `${styles.number} ${styles.current}` : styles.number}
+                aria-current={n === page ? 'page' : undefined}
+                aria-label={`Page ${n}`}
+              >
+                {n}
+              </Link>
+            </li>
+          ),
+        )}
+      </ol>
+      {/* Phones have no room for every number */}
+      <span className={`muted ${styles.summary}`}>
         Page {page} of {pages}
       </span>
       {page < pages ? (

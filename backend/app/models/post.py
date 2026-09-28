@@ -28,6 +28,13 @@ class PostStatus(enum.StrEnum):
     PUBLISHED = "published"
 
 
+class ContentFormat(enum.StrEnum):
+    """How a post's content is written: Markdown (older posts) or the rich-text editor's HTML"""
+
+    MARKDOWN = "markdown"
+    HTML = "html"
+
+
 SEARCH_VECTOR = (
     "setweight(to_tsvector('english', title), 'A') || "
     "setweight(to_tsvector('english', content), 'B')"
@@ -52,6 +59,11 @@ class Post(TimestampMixin, SoftDeleteMixin, Base):
     # so an old link never starts pointing at someone else's post
     slug: Mapped[str] = mapped_column(String(220), unique=True)
     content: Mapped[str] = mapped_column(Text)
+    content_format: Mapped[ContentFormat] = mapped_column(
+        Enum(ContentFormat, name="content_format", values_callable=lambda e: [m.value for m in e]),
+        default=ContentFormat.MARKDOWN,
+        server_default=ContentFormat.MARKDOWN.value,
+    )
     excerpt: Mapped[str] = mapped_column(String(300))
     status: Mapped[PostStatus] = mapped_column(
         Enum(PostStatus, name="post_status", values_callable=lambda e: [m.value for m in e]),

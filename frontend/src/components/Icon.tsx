@@ -15,6 +15,14 @@ const PATHS = {
       <path d="m21 21-4.35-4.35" />
     </>
   ),
+  grid: (
+    <>
+      <rect x="3" y="3" width="7" height="7" rx="1.5" />
+      <rect x="14" y="3" width="7" height="7" rx="1.5" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" />
+      <rect x="14" y="14" width="7" height="7" rx="1.5" />
+    </>
+  ),
   pen: (
     <>
       <path d="M12 20h9" />
@@ -72,6 +80,57 @@ const PATHS = {
     <>
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <path d="m7 10 5 5 5-5M12 15V3" />
+    </>
+  ),
+  // The editor's formatting toolbar
+  alignLeft: <path d="M21 6H3M15 12H3M17 18H3" />,
+  alignCenter: <path d="M21 6H3M17 12H7M19 18H5" />,
+  alignRight: <path d="M21 6H3M21 12H9M21 18H7" />,
+  alignJustify: <path d="M21 6H3M21 12H3M21 18H3" />,
+  listBullet: (
+    <>
+      <path d="M9 6h12M9 12h12M9 18h12" />
+      <path d="M4 6h.01M4 12h.01M4 18h.01" strokeWidth={3} />
+    </>
+  ),
+  listNumbered: (
+    <>
+      <path d="M10 6h11M10 12h11M10 18h11" />
+      <path d="M4 4h1v4M4 8h2M6 18H4c0-1.5 2-2 2-3.25a1 1 0 0 0-2-.25" />
+    </>
+  ),
+  quote: <path d="M6 7h4v4c0 3-1.5 5-4 6M14 7h4v4c0 3-1.5 5-4 6" />,
+  link: (
+    <>
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </>
+  ),
+  undo: (
+    <>
+      <path d="M3 7v6h6" />
+      <path d="M21 17a9 9 0 0 0-15-6.7L3 13" />
+    </>
+  ),
+  redo: (
+    <>
+      <path d="M21 7v6h-6" />
+      <path d="M3 17a9 9 0 0 1 15-6.7L21 13" />
+    </>
+  ),
+  clearFormat: <path d="M4 7V4h16v3M5 20h6M13 4 8 20M15 15l5 5M20 15l-5 5" />,
+  // The writing checks
+  check: <path d="M20 6 9 17l-5-5" />,
+  book: (
+    <>
+      <path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2Z" />
+      <path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7Z" />
+    </>
+  ),
+  sparkle: (
+    <>
+      <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9Z" />
+      <path d="M19 15v4M17 17h4" />
     </>
   ),
 } satisfies Record<string, ReactNode>

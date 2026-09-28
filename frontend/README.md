@@ -34,8 +34,13 @@ npm run build          # production build into dist/
 - `src/auth/`: who is logged in. The token is kept in `localStorage`; the user and their role
   are always fetched from `/users/me`, so a role change shows up without logging in again.
 - `src/theme/` and `src/styles/global.css`: light and dark themes. Colours are CSS variables;
-  "System" follows the OS setting, and the toggle in the top bar overrides it.
+  "System" follows the OS setting, and the toggle at the bottom of the sidebar overrides it.
 - `src/components/`: shared pieces (layout, post card, avatar, error message).
+- `src/components/RichEditor.tsx` and `src/components/writing/`: the post editor (Tiptap) and
+  its "Check your writing" strip. Accepted fixes are ordinary editor edits, so they keep
+  formatting and can be undone. `src/lib/editorText.ts` maps the checks' plain-text
+  positions back into the formatted post; `src/lib/readability.ts` scores readability in
+  the browser.
 - `src/pages/`: one component per page. Each has its own `.module.css`, whose class names
   can't clash with other pages.
 

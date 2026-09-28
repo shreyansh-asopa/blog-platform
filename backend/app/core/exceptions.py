@@ -49,6 +49,11 @@ class ContentRejectedError(AppError):
     code = "content_rejected"
 
 
+class EmptyContentError(AppError):
+    status_code = 422
+    code = "empty_content"
+
+
 class UnknownTopicError(AppError):
     status_code = 422
     code = "unknown_topic"
@@ -62,6 +67,18 @@ class FileTooLargeError(AppError):
 class UnsupportedFileTypeError(AppError):
     status_code = 415
     code = "unsupported_file_type"
+
+
+class TextTooLongError(AppError):
+    status_code = 413
+    code = "text_too_long"
+
+
+class CheckUnavailableError(AppError):
+    """A writing check's outside service is down, or not set up."""
+
+    status_code = 503
+    code = "check_unavailable"
 
 
 class RateLimitedError(AppError):

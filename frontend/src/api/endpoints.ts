@@ -13,8 +13,13 @@ import type {
   Profile,
   Role,
   Token,
+  Suggestion,
   TopicDetail,
+  ToneResult,
+  ToneTarget,
   User,
+  GrammarResult,
+  WritingStatus,
 } from './types'
 
 export const authApi = {
@@ -33,6 +38,8 @@ export const postsApi = {
   /** `q` searches (best match first); `author` is a username; `topic` is a topic slug */
   feed: (page = 1, size = 20, filters: { q?: string; author?: string; topic?: string } = {}) =>
     api<Page<PostSummary>>(`/posts${query({ page, size, ...filters })}`),
+  /** Most likes and comments in the last 7 days */
+  trending: (limit = 5) => api<PostSummary[]>(`/posts/trending${query({ limit })}`),
   bySlug: (slug: string) => api<PostDetail>(`/posts/${encodeURIComponent(slug)}`),
   like: (postId: string) => api<LikeStatus>(`/posts/${postId}/like`, { method: 'PUT' }),
   unlike: (postId: string) => api<LikeStatus>(`/posts/${postId}/like`, { method: 'DELETE' }),
@@ -82,6 +89,8 @@ function query(params: Record<string, string | number | undefined>): string {
 export const topicsApi = {
   /** Every topic, in sidebar order, with its published post count */
   list: () => api<TopicDetail[]>('/topics'),
+  /** The topics with the most likes and comments on their posts this past week */
+  trending: (limit = 3) => api<TopicDetail[]>(`/topics/trending${query({ limit })}`),
   get: (slug: string) => api<TopicDetail>(`/topics/${encodeURIComponent(slug)}`),
 }
 
@@ -96,4 +105,14 @@ export const adminApi = {
     api<User>(`/admin/users/${userId}/role`, { method: 'PATCH', body: { role } }),
   auditLogs: (page = 1, size = 20, action?: AuditAction) =>
     api<Page<AuditLog>>(`/admin/audit-logs${query({ page, size, action })}`),
+}
+
+export const writingApi = {
+  status: () => api<WritingStatus>('/writing/status'),
+  grammar: (text: string) =>
+    api<GrammarResult>('/writing/grammar', { method: 'POST', body: { text } }),
+  tone: (text: string, target: ToneTarget) =>
+    api<ToneResult>('/writing/tone', { method: 'POST', body: { text, target } }),
+  simplify: (sentence: string) =>
+    api<Pick<Suggestion, 'fix'>>('/writing/simplify', { method: 'POST', body: { sentence } }),
 }

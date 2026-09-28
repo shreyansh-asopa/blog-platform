@@ -3,7 +3,7 @@ import { RequireAuth } from './auth/RequireAuth'
 import { Layout } from './components/Layout'
 import { AdminPage } from './pages/AdminPage'
 import { AuthorPage } from './pages/AuthorPage'
-import { EditorPage } from './pages/EditorPage'
+import { EditorRoute } from './pages/EditorRoute'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { MyPostsPage } from './pages/MyPostsPage'
@@ -25,22 +25,8 @@ export const routes = (
     <Route path="t/:slug" element={<TopicPage />} />
     <Route path="search" element={<SearchPage />} />
 
-    <Route
-      path="write"
-      element={
-        <RequireAuth>
-          <EditorPage />
-        </RequireAuth>
-      }
-    />
-    <Route
-      path="edit/:slug"
-      element={
-        <RequireAuth>
-          <EditorPage />
-        </RequireAuth>
-      }
-    />
+    <Route path="write" element={<EditorRoute />} />
+    <Route path="edit/:slug" element={<EditorRoute />} />
     <Route
       path="me/posts"
       element={

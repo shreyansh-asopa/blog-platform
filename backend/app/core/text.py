@@ -1,6 +1,8 @@
 import re
 import unicodedata
 
+from app.core.html import html_to_text
+
 SLUG_MAX_LENGTH = 200
 EXCERPT_MAX_LENGTH = 200
 
@@ -35,9 +37,10 @@ def strip_markdown(content: str) -> str:
     return text
 
 
-def make_excerpt(content: str) -> str:
+def make_excerpt(content: str, html: bool = False) -> str:
     """The first ~200 characters of the content as plain text, cut at a word boundary."""
-    text = " ".join(strip_markdown(content).split())
+    plain = html_to_text(content) if html else strip_markdown(content)
+    text = " ".join(plain.split())
     if len(text) <= EXCERPT_MAX_LENGTH:
         return text
     cut = text[:EXCERPT_MAX_LENGTH].rsplit(" ", 1)[0]

@@ -1,0 +1,1251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --sunk: #eef0f3;
+  --rule: #e1e4ea;
+  --rule-strong: #c9ced8;
+  --ink: #18181b;
+  --muted: #5c5f6b;
+  --accent: #4f46e5;
+  --accent-soft: #eef2ff;
+
+  --web: #4f46e5;   --web-soft: #eef0ff;
+  --api: #0f766e;   --api-soft: #e6f5f3;
+  --data: #b45309;  --data-soft: #fdf3e4;
+  --ext: #be123c;   --ext-soft: #fdecef;
+  --ops: #475569;   --ops-soft: #eef1f5;
+
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #1b2230; --surface: #232b3a; --sunk: #1f2735; --rule: #334055; --rule-strong: #46546c;
+    --ink: #e6eaf2; --muted: #9ba6b8; --accent: #818cf8; --accent-soft: #2b2f5e;
+    --web: #8f97fb;  --web-soft: #272d55;
+    --api: #2dd4bf;  --api-soft: #173a3c;
+    --data: #f5b04a; --data-soft: #3a2f1e;
+    --ext: #fb7f99;  --ext-soft: #3d2330;
+    --ops: #a5b1c4;  --ops-soft: #2a3344;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #1b2230; --surface: #232b3a; --sunk: #1f2735; --rule: #334055; --rule-strong: #46546c;
+  --ink: #e6eaf2; --muted: #9ba6b8; --accent: #818cf8; --accent-soft: #2b2f5e;
+  --web: #8f97fb;  --web-soft: #272d55;
+  --api: #2dd4bf;  --api-soft: #173a3c;
+  --data: #f5b04a; --data-soft: #3a2f1e;
+  --ext: #fb7f99;  --ext-soft: #3d2330;
+  --ops: #a5b1c4;  --ops-soft: #2a3344;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.6 var(--body);
+  padding-inline: 16px;
+  padding-block: 0 72px;
+}
+h1, h2, h3, h4 { font-family: var(--display); text-wrap: balance; line-height: 1.2; margin: 0; }
+h2 { font-size: 1.85rem; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.25rem; font-weight: 700; }
+h4 { font-size: 1.02rem; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--accent); }
+code, .mono { font-family: var(--mono); font-size: 0.88em; }
+p code, li code, td code { background: var(--sunk); border: 1px solid var(--rule); border-radius: 4px; padding: 0 4px; }
+.muted { color: var(--muted); }
+.eyebrow {
+  font: 500 0.72rem/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---------- page frame ---------- */
+.page { max-width: 1180px; margin: 0 auto; }
+.masthead {
+  display: grid;
+  gap: 18px;
+  padding-block: 48px 36px;
+  border-bottom: 1px solid var(--rule);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand svg { flex: none; }
+.brand span { font: 700 1.1rem/1 var(--display); }
+.masthead h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 700; letter-spacing: -0.02em; }
+.masthead .lede { max-width: 64ch; font-size: 1.1rem; color: var(--muted); }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; }
+.fact {
+  font: 500 0.8rem/1 var(--mono);
+  padding: 7px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--surface);
+}
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.85rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; border: 2px solid; }
+.swatch.web { border-color: var(--web); background: var(--web-soft); }
+.swatch.api { border-color: var(--api); background: var(--api-soft); }
+.swatch.data { border-color: var(--data); background: var(--data-soft); }
+.swatch.ext { border-color: var(--ext); background: var(--ext-soft); }
+.swatch.ops { border-color: var(--ops); background: var(--ops-soft); }
+
+.layout { display: grid; gap: 40px; padding-top: 36px; }
+@media (min-width: 1000px) {
+  .layout { grid-template-columns: 220px minmax(0, 1fr); gap: 56px; }
+  .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; }
+}
+.toc { font-size: 0.9rem; }
+.toc ol { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 2px; counter-reset: toc; }
+.toc li { counter-increment: toc; }
+.toc a {
+  display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px;
+  color: var(--ink); text-decoration: none;
+}
+.toc a::before { content: counter(toc, decimal-leading-zero); font: 500 0.78rem/1.7 var(--mono); color: var(--muted); }
+.toc a:hover { background: var(--surface); }
+@media (max-width: 999px) {
+  .toc ol { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+  .toc { padding-bottom: 20px; border-bottom: 1px solid var(--rule); }
+}
+
+main { display: grid; gap: 72px; min-width: 0; }
+section.chapter { display: grid; gap: 24px; scroll-margin-top: 20px; }
+.chapter-head { display: grid; gap: 8px; }
+.chapter-head p { max-width: 68ch; color: var(--muted); }
+.prose { display: grid; gap: 12px; max-width: 70ch; }
+.prose ul, .prose ol { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+/* ---------- features ---------- */
+.feature {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+}
+.feature-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.feature-num { font: 500 0.8rem/1 var(--mono); color: var(--accent); }
+.tag {
+  font: 500 0.7rem/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 7px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.tag.ai { background: var(--ext-soft); color: var(--ext); }
+.split { display: grid; gap: 20px; }
+@media (min-width: 760px) { .split { grid-template-columns: 1fr 1fr; } }
+.split > div { display: grid; gap: 8px; align-content: start; min-width: 0; }
+/* Grid items default to min-width: auto, so a long code span would widen the card past a phone screen */
+.feature, .split { min-width: 0; }
+.feature code { overflow-wrap: anywhere; }
+.split ul { margin: 0; padding-left: 1.1em; display: grid; gap: 5px; }
+.logic {
+  background: var(--sunk);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.logic .eyebrow { color: var(--accent); }
+.formula {
+  font: 500 0.8rem/1.6 var(--mono);
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 500 0.72rem/1.3 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+td.num, th.num { text-align: right; }
+tr.win td { background: var(--accent-soft); }
+.caption { font-size: 0.82rem; color: var(--muted); }
+
+/* ---------- block diagrams ---------- */
+.diagram {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 24px;
+}
+.diagram-inner { min-width: 720px; display: grid; gap: 0; }
+.zone {
+  border: 1.5px dashed var(--rule-strong);
+  border-radius: 10px;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  position: relative;
+}
+.zone-label {
+  font: 500 0.7rem/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.row { display: grid; gap: 12px; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.node {
+  border: 1.5px solid var(--c, var(--rule-strong));
+  background: var(--c-soft, var(--surface));
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+.node b { font: 700 0.95rem/1.25 var(--display); }
+.node small { font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+.node .port { font: 500 0.72rem/1 var(--mono); color: var(--c, var(--muted)); }
+.node.web  { --c: var(--web);  --c-soft: var(--web-soft); }
+.node.api  { --c: var(--api);  --c-soft: var(--api-soft); }
+.node.data { --c: var(--data); --c-soft: var(--data-soft); }
+.node.ext  { --c: var(--ext);  --c-soft: var(--ext-soft); }
+.node.ops  { --c: var(--ops);  --c-soft: var(--ops-soft); }
+.node.plain { --c: var(--rule-strong); --c-soft: var(--surface); }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.chip {
+  font: 500 0.72rem/1 var(--mono);
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+}
+
+/* vertical connector between stacked blocks */
+.link {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  min-height: 44px;
+  font: 500 0.74rem/1.3 var(--mono);
+  color: var(--muted);
+}
+.link::before {
+  content: "";
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  width: 0;
+  height: 100%;
+  border-left: 2px solid var(--rule-strong);
+}
+.link span {
+  grid-column: 2;
+  grid-row: 1;
+  background: var(--surface);
+  padding: 3px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  white-space: nowrap;
+  z-index: 1;
+}
+.link.down span::after { content: " ↓"; }
+.link.both span::after { content: " ↕"; }
+.zone .link span { background: var(--surface); }
+
+/* system overview grid */
+.sys { display: grid; grid-template-columns: minmax(0, 2.2fr) 96px minmax(0, 1fr); align-items: stretch; }
+.sys .hlink {
+  display: grid; align-content: center; justify-items: center; gap: 6px;
+  font: 500 0.72rem/1.3 var(--mono); color: var(--muted); text-align: center;
+}
+.sys .hlink i { display: block; width: 100%; border-top: 2px solid var(--rule-strong); position: relative; }
+.sys .hlink i::after {
+  content: ""; position: absolute; right: -2px; top: -6px;
+  border: 5px solid transparent; border-left: 7px solid var(--rule-strong);
+}
+.pipe { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0; align-items: stretch; }
+.pipe .node { border-radius: 0; border-right-width: 0; }
+.pipe .node:first-child { border-radius: 8px 0 0 8px; }
+.pipe .node:last-child { border-radius: 0 8px 8px 0; border-right-width: 1.5px; }
+
+/* layered stack diagrams */
+.stack { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 16px; }
+.layers { display: grid; }
+.layer {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1.5px solid var(--c);
+  background: var(--c-soft);
+  border-radius: 8px;
+}
+.layer .name { display: grid; gap: 2px; }
+.layer .name b { font: 700 0.95rem/1.2 var(--display); }
+.layer .name small { font: 500 0.7rem/1.2 var(--mono); color: var(--c); }
+.layer.web { --c: var(--web); --c-soft: var(--web-soft); }
+.layer.api { --c: var(--api); --c-soft: var(--api-soft); }
+.layer.data { --c: var(--data); --c-soft: var(--data-soft); }
+.layer.ext { --c: var(--ext); --c-soft: var(--ext-soft); }
+.layer.ops { --c: var(--ops); --c-soft: var(--ops-soft); }
+.side { display: grid; gap: 12px; align-content: start; }
+.side .node { gap: 6px; }
+.side ul { margin: 0; padding-left: 1em; font-size: 0.78rem; color: var(--muted); display: grid; gap: 2px; }
+.side ul code { font-size: 0.74rem; }
+
+/* ---------- ER model ---------- */
+.er { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); min-width: 760px; }
+.entity {
+  border: 1.5px solid var(--data);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+  align-self: start;
+}
+.entity header {
+  background: var(--data-soft);
+  padding: 8px 12px;
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+.entity header b { font: 700 0.95rem/1.2 var(--mono); }
+.entity header small { font-size: 0.72rem; color: var(--muted); }
+.entity ul { list-style: none; margin: 0; padding: 6px 0; font: 400 0.78rem/1.3 var(--mono); }
+.entity li { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 3px 12px; }
+.entity li em { font-style: normal; color: var(--muted); }
+.key {
+  font: 500 0.62rem/1 var(--mono); padding: 2px 4px; border-radius: 3px; margin-left: 4px;
+  background: var(--data-soft); color: var(--data); vertical-align: 1px;
+}
+.key.fk { background: var(--api-soft); color: var(--api); }
+.key.gen { background: var(--web-soft); color: var(--web); }
+.rels { display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.rel {
+  font: 400 0.8rem/1.4 var(--mono);
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+}
+.rel b { color: var(--data); font-weight: 500; }
+
+/* ---------- sequence flows ---------- */
+.flow { display: grid; gap: 0; counter-reset: step; }
+.step {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 34px 110px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--rule);
+}
+.step:last-child { border-bottom: 0; }
+.step::before {
+  content: counter(step);
+  width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center;
+  font: 500 0.78rem/1 var(--mono);
+  background: var(--sunk); border: 1px solid var(--rule);
+}
+.lane {
+  font: 500 0.7rem/1 var(--mono);
+  letter-spacing: 0.04em;
+  padding: 6px 7px;
+  border-radius: 4px;
+  text-align: center;
+  border: 1px solid var(--c);
+  color: var(--c);
+  background: var(--c-soft);
+  margin-top: 1px;
+}
+.lane.web { --c: var(--web); --c-soft: var(--web-soft); }
+.lane.api { --c: var(--api); --c-soft: var(--api-soft); }
+.lane.data { --c: var(--data); --c-soft: var(--data-soft); }
+.lane.ext { --c: var(--ext); --c-soft: var(--ext-soft); }
+.step p { font-size: 0.92rem; }
+@media (max-width: 560px) {
+  .step { grid-template-columns: 34px minmax(0, 1fr); }
+  .step .lane { grid-column: 2; justify-self: start; }
+  .step p { grid-column: 2; }
+}
+.flows { display: grid; gap: 20px; }
+@media (min-width: 900px) { .flows { grid-template-columns: 1fr 1fr; } }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+/* AI provider chain */
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.chain .node { min-width: 150px; flex: 1 1 150px; }
+.chain .arrow { font: 500 0.72rem/1.2 var(--mono); color: var(--muted); text-align: center; flex: 0 0 auto; }
+
+.grid-3 { display: grid; gap: 16px; }
+@media (min-width: 760px) { .grid-3 { grid-template-columns: repeat(3, 1fr); } }
+
+pre.code {
+  margin: 0;
+  font: 400 0.8rem/1.55 var(--mono);
+  background: var(--sunk);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 14px 16px;
+  overflow-x: auto;
+}
+pre.code .c { color: var(--muted); }
+pre.code .k { color: var(--accent); }
+
+footer.end {
+  margin-top: 72px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header class="masthead">
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+        <rect width="28" height="28" rx="7" fill="var(--accent)"/>
+        <path d="M14 5l2.2 6.8L23 14l-6.8 2.2L14 23l-2.2-6.8L5 14l6.8-2.2z" fill="var(--surface)"/>
+      </svg>
+      <span>Lumen</span>
+    </div>
+    <p class="eyebrow">System design document · v1 · September 2026</p>
+    <h1>Lumen Architecture</h1>
+    <p class="lede">How the Lumen blog platform works, end to end. It starts with what Lumen can do and the logic behind each feature, then shows the whole system, followed by separate architectures for the frontend, backend and database and the flows that connect them.</p>
+    <div class="facts">
+      <span class="fact">React 19 · TypeScript · Vite</span>
+      <span class="fact">FastAPI · Python 3.13</span>
+      <span class="fact">PostgreSQL 16</span>
+      <span class="fact">Docker Compose</span>
+      <span class="fact">LanguageTool · Gemini / Groq</span>
+      <span class="fact">GitHub Actions CI</span>
+    </div>
+    <div class="legend" aria-label="Diagram colour key">
+      <span><i class="swatch web"></i>Frontend (browser)</span>
+      <span><i class="swatch api"></i>Backend (API)</span>
+      <span><i class="swatch data"></i>Database &amp; storage</span>
+      <span><i class="swatch ext"></i>External services</span>
+      <span><i class="swatch ops"></i>Build &amp; operations</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Contents">
+      <p class="eyebrow">Contents</p>
+      <ol>
+        <li><a href="#features">Features &amp; logic</a></li>
+        <li><a href="#system">System architecture</a></li>
+        <li><a href="#frontend">Frontend</a></li>
+        <li><a href="#backend">Backend</a></li>
+        <li><a href="#database">Database</a></li>
+        <li><a href="#flows">How it interacts</a></li>
+        <li><a href="#security">Security &amp; operations</a></li>
+        <li><a href="#decisions">Key decisions</a></li>
+      </ol>
+    </nav>
+
+    <main>
+<!-- =============================== 01 FEATURES =============================== -->
+      <section class="chapter" id="features">
+        <div class="chapter-head">
+          <p class="eyebrow">01 · Capabilities</p>
+          <h2>Features and the logic behind them</h2>
+          <p>Lumen is a multi-user blog: anyone can read, signed-in users write, like and comment, and admins moderate. Each feature below lists what the user sees and how it works underneath.</p>
+        </div>
+
+        <!-- F1 -->
+        <article class="feature">
+          <div class="feature-head"><span class="feature-num">F1</span><h3>Reading and discovery</h3></div>
+          <div class="split">
+            <div>
+              <p><strong>What users get</strong></p>
+              <ul>
+                <li>A home feed of published posts, newest first, with a hero, trending posts and a topics sidebar.</li>
+                <li>Post pages, author profiles (<code>/u/:username</code>) and topic pages (<code>/t/:slug</code>).</li>
+                <li>14 curated topics, from AI and Web Development to Travel and Personal Finance.</li>
+              </ul>
+            </div>
+            <div class="logic">
+              <p class="eyebrow">How it works</p>
+              <ul>
+                <li>The feed is <code>GET /posts</code>, paginated (default 20 per page, max 100), ordered by <code>published_at desc, id</code>. The <code>id</code> tie-breaker keeps pages stable.</li>
+                <li>Only posts with <code>status = published</code> and no <code>deleted_at</code> are visible to readers.</li>
+                <li>Like and comment counts are computed in the same SQL query as subqueries, so the list never makes one extra query per post.</li>
+                <li>TanStack Query caches each page in the browser, so going back to the feed is instant.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- F2 -->
+        <article class="feature">
+          <div class="feature-head"><span class="feature-num">F2</span><h3>Search</h3></div>
+          <div class="split">
+            <div>
+              <p><strong>What users get</strong></p>
+              <ul>
+                <li>A search box that understands phrases (<code>"rich text"</code>), OR, and exclusions (<code>-draft</code>), like a web search engine.</li>
+                <li>Results can be narrowed by author and topic.</li>
+              </ul>
+            </div>
+            <div class="logic">
+              <p class="eyebrow">How it works</p>
+              <ul>
+                <li>PostgreSQL full-text search. Each post has a stored <code>search_vector</code> column that the database computes itself from the title and content. Title words are weighted higher than body words.</li>
+                <li>A GIN index on that column makes search fast without scanning every post.</li>
+                <li>The query is parsed by <code>websearch_to_tsquery('english')</code>, which also handles stemming, so “writing” matches “write”.</li>
+                <li>Results are sorted by <code>ts_rank</code> (relevance), then newest first.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- F3 -->
+        <article class="feature">
+          <div class="feature-head"><span class="feature-num">F3</span><h3>Trending posts</h3><span class="tag">7-day window</span></div>
+          <div class="split">
+            <div>
+              <p><strong>What users get</strong></p>
+              <ul>
+                <li>A “Trending” list of 5 posts on the home page: the posts people are reacting to <em>right now</em>, not just the most popular of all time.</li>
+              </ul>
+              <p style="margin-top:8px"><strong>Why this design</strong></p>
+              <ul>
+                <li>Counting only recent activity lets a new post with a burst of likes beat an old post that has many likes but no new ones.</li>
+                <li>The all-time tie-breakers make sure the list is never empty or random on a quiet week.</li>
+              </ul>
+            </div>
+            <div class="logic">
+              <p class="eyebrow">Ranking logic · <code>PostRepository.trending</code></p>
+              <div class="formula">since = now − 7 days
+score = likes since + comments since
+        (deleted comments don't count)
+
+ORDER BY score                      DESC,
+         like_count + comment_count DESC,
+         published_at               DESC,
+         id</div>
+              <p class="caption">Only published, non-deleted posts. <code>GET /posts/trending?limit=5</code> (1 to 20).</p>
+            </div>
+          </div>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Example post</th><th class="num">Likes (7 d)</th><th class="num">Comments (7 d)</th><th class="num">Score</th><th class="num">All-time</th><th class="num">Rank</th></tr></thead>
+              <tbody>
+                <tr class="win"><td>New post, published 2 days ago</td><td class="num">9</td><td class="num">4</td><td class="num">13</td><td class="num">13</td><td class="num">1</td></tr>
+                <tr><td>Classic guide from last year</td><td class="num">3</td><td class="num">1</td><td class="num">4</td><td class="num">210</td><td class="num">2</td></tr>
+                <tr><td>Post from last month</td><td class="num">2</td><td class="num">2</td><td class="num">4</td><td class="num">35</td><td class="num">3</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="caption">Illustrative numbers. The classic guide and last month's post tie on a score of 4, so the all-time total decides the order.</p>
+        </article>
+
+        <!-- F4 -->
+        <article class="feature">
+          <div class="feature-head"><span class="feature-num">F4</span><h3>Trending topics</h3><span class="tag">7-day window</span></div>
+          <div class="split">
+            <div>
+              <p><strong>What users get</strong></p>
+              <ul>
+                <li>The sidebar shows 3 “Trending topics” at the top, then the rest of the topics.</li>
+                <li>Clicking a topic opens its page with all of its posts.</li>
+              </ul>
+              <p style="margin-top:8px"><strong>Why this design</strong></p>
+              <ul>
+                <li>A topic is trending when its <em>posts</em> are getting attention, so it reuses the same engagement signal as trending posts.</li>
+                <li>A post can have up to 3 topics, so one popular post lifts each of its topics.</li>
+              </ul>
+            </div>
+            <div class="logic">
+              <p class="eyebrow">Ranking logic · <code>TopicRepository.trending</code></p>
+              <div class="formula">for each topic:
+  engagement = likes + comments in the
+               last 7 days on its posts
+  published  = its published posts
+
+ORDER BY engagement DESC,
+         published  DESC,
+         position   ASC  -- curated</div>
+              <p class="caption"><code>GET /topics/trending?limit=3</code>. The browser caches the answer for 5 minutes (<code>staleTime</code>), so the sidebar doesn't re-query on every page.</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- F5 -->
+        <article class="feature">
+          <div class="feature-head"><span class="feature-num">F5</span><h3>Writing and publishing</h3></div>
+          <div class="split">
+            <div>
+              <p><strong>What users get</strong></p>
+              <ul>
+                <li>A rich-text editor (Tiptap): headings, bold, italic, lists, quotes, code, tables, links, colours, fonts and alignment.</li>
+                <li>Drafts, publish and unpublish, cover images, up to 3 topics, and an unsaved-changes warning (<kbd>⌘S</kbd> saves).</li>
+                <li>“My posts” and “Drafts” pages.</li>
+              </ul>
+            </div>
+            <div class="logic">
+              <p class="eyebrow">How it works</p>
+              <ul>
+                <li><strong>Safe HTML, twice.</strong> The editor produces HTML. The server cleans it with <code>nh3</code> using an allowlist of tags and styles before saving, and the browser cleans it again with DOMPurify before showing it. A script can't get through either one.</li>
+                <li><strong>Slugs.</strong> The URL slug follows the title while the post is a draft and is frozen once published, so shared links never break.</li>
+                <li><strong>Excerpts</strong> are generated from the content unless the author writes one.</li>
+                <li><strong>Covers</strong> are checked by their real file bytes (JPEG, PNG or WebP, max 5 MB) and saved with a random filename.</li>
+                <li>Older posts written in Markdown are still shown correctly (<code>content_format</code>).</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- F6 -->
+        <article class="feature">
+          <div class="feature-head"><span class="feature-num">F6</span><h3>Check your writing</h3><span class="tag ai">AI</span></div>
+          <p class="muted" style="max-width:70ch">A strip under the editor toolbar with three checks. Each opens a popup, and every accepted fix is a normal editor edit: it appears in the post at once, can be undone with <kbd>⌘Z</kbd>, and is saved with the post. The server never stores the text it checks.</p>
+
+          <div class="grid-3">
+            <div class="logic">
+              <p class="eyebrow">Grammar · LanguageTool + AI</p>
+              <ul>
+                <li>The server sends the text to <strong>LanguageTool</strong> (word-level spelling, grammar, punctuation and style) and the <strong>AI</strong> (whole-sentence fixes) <em>at the same time</em> with <code>asyncio.gather</code>.</li>
+                <li>An AI fix is kept only if its original sentence really appears in the post, up to 40 fixes. That filters out made-up text.</li>
+                <li>Word issues inside a sentence the AI rewrote are hidden, so the writer isn't asked to fix the same thing twice.</li>
+                <li>If one source fails, the other's results still show, with a note.</li>
+              </ul>
+            </div>
+            <div class="logic">
+              <p class="eyebrow">Readability · in the browser</p>
+              <ul>
+                <li>Calculated locally as the writer types, with no server call.</li>
+                <li>Flesch reading ease:</li>
+              </ul>
+              <div class="formula" style="font-size:0.78rem">206.835
+− 1.015 × words/sentence
+− 84.6  × syllables/word</div>
+              <ul>
+                <li>70+ easy · 60 fairly easy · 50 medium · below 50 hard.</li>
+                <li>Reading time at 200 words a minute. Sentences over 25 words are listed, each with <strong>Simplify with AI</strong>.</li>
+              </ul>
+            </div>
+            <div class="logic">
+              <p class="eyebrow">Tone · AI</p>
+              <ul>
+                <li>The writer picks a target: professional, friendly, confident or casual.</li>
+                <li>The AI answers in JSON: the tone it hears, a one-line explanation, and up to 15 rewrites (<code>original → fix, reason</code>).</li>
+                <li>As with grammar, only rewrites whose original text is found in the post are shown.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="logic">
+            <p class="eyebrow">AI provider chain · <code>app/integrations/llm.py</code></p>
+            <div class="chain">
+              <div class="node ext"><b>Gemini</b><small>gemini-3.1-flash-lite → fallback gemini-flash-latest</small><span class="port">if GEMINI_API_KEY</span></div>
+              <div class="arrow">else →</div>
+              <div class="node ext"><b>Groq</b><small>llama-3.3-70b-versatile → fallback llama-3.1-8b-instant</small><span class="port">if GROQ_API_KEY</span></div>
+              <div class="arrow">else →</div>
+              <div class="node plain"><b>Disabled</b><small>The editor says “AI checks aren't set up yet”; grammar still works through LanguageTool</small></div>
+            </div>
+            <ul>
+              <li>Both providers use the same OpenAI-style <code>/chat/completions</code> call, in JSON mode at temperature 0.2. That's why one <code>ChatModel</code> class serves both.</li>
+              <li>If the first model returns 404 (retired), 429 (out of quota) or a 5xx (overloaded), the fallback model is tried. A 401 or 403 (bad key) stops at once, because the second model would fail the same way.</li>
+              <li><strong>Prompt-injection guard.</strong> The post is wrapped in tags, and the model is told to treat it as text only and never follow instructions inside it.</li>
+              <li><strong>Limits.</strong> Login required, 10 checks a minute per user, and at most 20,000 characters per check.</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- F7 -->
+        <article class="feature">
+          <div class="feature-head"><span class="feature-num">F7</span><h3>Likes and comments</h3></div>
+          <div class="split">
+            <div>
+              <p><strong>What users get</strong></p>
+              <ul>
+                <li>Like a post with one click. The heart fills at once, before the server answers.</li>
+                <li>Comment threads under each post. Authors delete their own comments; admins can delete any.</li>
+              </ul>
+            </div>
+            <div class="logic">
+              <p class="eyebrow">How it works</p>
+              <ul>
+                <li><strong>Likes</strong> are <code>PUT</code> / <code>DELETE /posts/{id}/like</code>. The primary key <code>(user_id, post_id)</code> makes a double like impossible, and repeating the request is harmless. You can't like your own post.</li>
+                <li>The UI is <em>optimistic</em>: it updates the cache first and rolls back if the request fails.</li>
+                <li><strong>Moderation.</strong> Every comment is checked before it's saved: by a word list by default, or by an external moderation API when one is set up. A rejected comment gets a 422 <code>content_rejected</code>. If the moderation API is down, the comment is accepted and a warning is logged, so the site keeps working.</li>
+                <li>10 comments a minute per user.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- F8 -->
+        <article class="feature">
+          <div class="feature-head"><span class="feature-num">F8</span><h3>Admin and audit log</h3></div>
+          <div class="split">
+            <div>
+              <p><strong>What users get</strong></p>
+              <ul>
+                <li>An admin area to list users and change their roles.</li>
+                <li>An audit log page showing who did what, and when.</li>
+                <li>Admins can edit, unpublish or delete any post and delete any comment.</li>
+              </ul>
+            </div>
+            <div class="logic">
+              <p class="eyebrow">How it works</p>
+              <ul>
+                <li>Role-based access: every protected route declares a permission (<code>require_permission</code>). The role is read from the database on every request, so a demotion works at once, even with a valid token.</li>
+                <li>Recorded actions: <code>user.role_changed</code>, <code>post.updated</code>, <code>post.published</code>, <code>post.unpublished</code>, <code>post.deleted</code> and <code>comment.deleted</code>.</li>
+                <li>Each audit row is written <em>in the same transaction</em> as the change, so there's never a change without a record, or a record without a change. The log is append-only.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- F9 -->
+        <article class="feature">
+          <div class="feature-head"><span class="feature-num">F9</span><h3>Export your posts</h3></div>
+          <div class="split">
+            <div>
+              <p><strong>What users get</strong></p>
+              <ul><li>Download all your posts, drafts included, as <code>lumen-posts-YYYY-MM-DD.csv</code>, optionally filtered by status.</li></ul>
+            </div>
+            <div class="logic">
+              <p class="eyebrow">How it works</p>
+              <ul>
+                <li>Streamed: rows are read from the database 500 at a time and sent as they're ready, so a large export never has to fit in memory.</li>
+                <li>Cells that start with <code>=</code>, <code>+</code>, <code>-</code>, <code>@</code> or a tab are escaped, so a spreadsheet can't run them as formulas. A UTF-8 BOM makes Excel show accents correctly.</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- F10 -->
+        <article class="feature">
+          <div class="feature-head"><span class="feature-num">F10</span><h3>Themes and phones</h3></div>
+          <div class="split">
+            <div><ul><li>Light, dark and “system” themes, remembered per browser.</li><li>Layouts for phones: the sidebar stacks and the check popups become bottom sheets.</li></ul></div>
+            <div class="logic"><p class="eyebrow">How it works</p><ul><li>All colours are CSS variables. <code>useTheme</code> sets <code>data-theme</code> on the page, and “system” follows the operating system's <code>prefers-color-scheme</code>.</li></ul></div>
+          </div>
+        </article>
+      </section>
+
+<!-- =============================== 02 SYSTEM =============================== -->
+      <section class="chapter" id="system">
+        <div class="chapter-head">
+          <p class="eyebrow">02 · The whole system</p>
+          <h2>System architecture</h2>
+          <p>Three tiers: a React single-page app in the browser, a stateless FastAPI service, and PostgreSQL. The API and database run as Docker Compose containers. The API is the only part that talks to the database or to outside services.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="System block diagram: users use the React app in the browser, which calls the FastAPI API through the Vite proxy; the API uses PostgreSQL and an uploads volume and calls LanguageTool, Gemini or Groq, and an optional moderation API.">
+          <div class="diagram-inner">
+            <div class="row">
+              <div class="node plain"><b>Reader (guest)</b><small>Browse, search, read</small></div>
+              <div class="node plain"><b>Writer (user)</b><small>Write, check, like, comment</small></div>
+              <div class="node plain"><b>Admin</b><small>Roles, moderation, audit</small></div>
+            </div>
+            <div class="link down"><span>HTTPS in the browser</span></div>
+
+            <div class="zone">
+              <span class="zone-label">Browser</span>
+              <div class="node web">
+                <b>Lumen web app · React 19 SPA</b>
+                <small>Pages and components · TanStack Query cache · Tiptap editor · readability worked out locally · DOMPurify · login token (JWT) kept in localStorage</small>
+                <div class="chips"><span class="chip">React Router</span><span class="chip">TanStack Query</span><span class="chip">Tiptap 3</span><span class="chip">CSS modules</span></div>
+              </div>
+            </div>
+            <div class="link down"><span>/api/v1/* · /uploads/* · JSON · Authorization: Bearer &lt;JWT&gt;</span></div>
+
+            <div class="node web" style="justify-self:center; min-width:340px; text-align:center">
+              <b>Vite dev server · :5173</b>
+              <small>Serves the app and proxies /api and /uploads to the API (in production: a CDN or static host plus a reverse proxy)</small>
+            </div>
+            <div class="link down"><span>HTTP</span></div>
+
+            <div class="sys">
+              <div class="zone">
+                <span class="zone-label">Docker Compose network</span>
+                <div class="node api">
+                  <b>blog-api · FastAPI on Uvicorn</b><span class="port">:8000 · healthcheck GET /ready</span>
+                  <div class="pipe" style="margin-top:8px">
+                    <div class="node plain"><b style="font-size:.8rem">Middleware</b><small>request id, CORS, GZip</small></div>
+                    <div class="node plain"><b style="font-size:.8rem">Routers</b><small>/api/v1/*</small></div>
+                    <div class="node plain"><b style="font-size:.8rem">Deps</b><small>auth, RBAC, limits</small></div>
+                    <div class="node plain"><b style="font-size:.8rem">Services</b><small>rules</small></div>
+                    <div class="node plain"><b style="font-size:.8rem">Repositories</b><small>SQL</small></div>
+                  </div>
+                </div>
+                <div class="link both"><span>asyncpg · pooled async sessions</span></div>
+                <div class="row">
+                  <div class="node data"><b>blog-db · PostgreSQL 16</b><span class="port">:5432 · volume db_data</span><small>7 tables · full-text GIN index · Alembic migrations run on start</small></div>
+                  <div class="node data"><b>uploads volume</b><span class="port">/uploads</span><small>Cover images through the Storage interface (local disk now, S3-ready)</small></div>
+                </div>
+              </div>
+
+              <div class="hlink"><span>outbound HTTPS<br>httpx2 · timeouts<br>retries</span><i></i></div>
+
+              <div class="zone">
+                <span class="zone-label">External services</span>
+                <div class="node ext"><b>LanguageTool</b><small>Public API · word-level grammar · no key</small></div>
+                <div class="node ext"><b>Google Gemini / Groq</b><small>Sentence fixes, tone, simplify · free API key · fallback model</small></div>
+                <div class="node ext"><b>Moderation API</b><small>Optional · the word list is used when not set</small></div>
+              </div>
+            </div>
+
+            <div class="link"><span>built and verified by</span></div>
+            <div class="node ops">
+              <b>GitHub Actions CI · every push and pull request</b>
+              <div class="chips"><span class="chip">ruff check + format</span><span class="chip">alembic check</span><span class="chip">pytest + Postgres</span><span class="chip">tsc</span><span class="chip">oxlint</span><span class="chip">prettier</span><span class="chip">vite build</span><span class="chip">docker build</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prose">
+          <p><strong>Reading the diagram.</strong> The browser never talks to the database or to the AI. Every request goes to the API, which checks who you are, applies the rules, reads or writes Postgres, and calls outside services only for writing checks and optional moderation. That's what keeps the API key and the database password on the server.</p>
+          <p>The API is <em>stateless</em>: logins are signed tokens, not server sessions, so more API containers could run behind a load balancer without changes. Rate-limit counters are the one exception (they live in memory; see section 07).</p>
+        </div>
+      </section>
+
+<!-- =============================== 03 FRONTEND =============================== -->
+      <section class="chapter" id="frontend">
+        <div class="chapter-head">
+          <p class="eyebrow">03 · Frontend</p>
+          <h2>Frontend architecture</h2>
+          <p>A React single-page app built with Vite. Pages put components together, components get data through TanStack Query hooks, and every network call goes through one small API client.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Frontend layers: routes and pages, components, data hooks, API client, with side modules for auth, theme and lib utilities.">
+          <div class="diagram-inner">
+            <div class="stack">
+              <div class="layers">
+                <div class="layer web"><div class="name"><b>Router &amp; pages</b><small>src/pages</small></div>
+                  <div class="chips"><span class="chip">/</span><span class="chip">/p/:slug</span><span class="chip">/u/:username</span><span class="chip">/t/:slug</span><span class="chip">/search</span><span class="chip">/write</span><span class="chip">/edit/:slug</span><span class="chip">/me/posts</span><span class="chip">/me/drafts</span><span class="chip">/admin</span><span class="chip">/admin/audit</span><span class="chip">/login</span><span class="chip">/register</span><span class="chip">404</span></div></div>
+                <div class="link down"><span>compose</span></div>
+                <div class="layer web"><div class="name"><b>Components</b><small>src/components</small></div>
+                  <div class="chips"><span class="chip">Layout</span><span class="chip">PostList · PostCard</span><span class="chip">TrendingPosts</span><span class="chip">PostBody</span><span class="chip">RichEditor</span><span class="chip">writing/ CheckBar · Grammar · Readability · Tone</span><span class="chip">TopicPicker</span><span class="chip">LikeButton</span><span class="chip">Comments</span><span class="chip">ConfirmDialog</span></div></div>
+                <div class="link down"><span>useQuery / useMutation</span></div>
+                <div class="layer web"><div class="name"><b>Server-state layer</b><small>TanStack Query</small></div>
+                  <small>Caches every response by key (e.g. <code>['posts', params]</code>), removes duplicate requests, refetches stale data, and updates optimistically for likes. <code>useTopics</code>, <code>useTrendingTopics</code> (staleTime 5 min) and <code>useWritingStatus</code> (60 s).</small></div>
+                <div class="link down"><span>typed functions</span></div>
+                <div class="layer web"><div class="name"><b>API client</b><small>src/api</small></div>
+                  <small><code>client.ts</code> adds the Bearer token, parses JSON and turns error bodies into <code>ApiError</code> (with a code, message and request id). <code>endpoints.ts</code> has one function per API route; <code>types.ts</code> mirrors the backend schemas.</small></div>
+                <div class="link down"><span>fetch /api/v1</span></div>
+                <div class="layer api"><div class="name"><b>FastAPI</b><small>backend</small></div><small>See section 04</small></div>
+              </div>
+              <div class="side">
+                <div class="node web"><b>auth/</b><ul><li><code>AuthProvider</code>: the current user, login and logout</li><li><code>RequireAuth</code>: guards /write, /me and /admin</li><li><code>useAuth</code></li></ul></div>
+                <div class="node web"><b>theme/</b><ul><li><code>useTheme</code>: light, dark or system</li><li>Sets <code>data-theme</code></li></ul></div>
+                <div class="node web"><b>lib/</b><ul><li><code>editorText</code>: maps plain text to editor positions</li><li><code>readability</code>: the Flesch score</li><li><code>html</code>: DOMPurify allowlist</li><li><code>format</code>, <code>pages</code></li></ul></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="split">
+          <div class="prose">
+            <h4>The logic behind it</h4>
+            <ul>
+              <li><strong>Server state is not app state.</strong> Posts, topics and comments belong to the server, so TanStack Query owns them. There's no Redux: the only real client state is the login token and the theme, each kept in a small context.</li>
+              <li><strong>One client, one error shape.</strong> Every failure becomes an <code>ApiError</code>, so every screen shows errors the same way, including the request id to search for in the logs.</li>
+              <li><strong>Applying fixes safely.</strong> LanguageTool and the AI return positions in <em>plain text</em>, but the editor holds a formatted document. <code>lib/editorText.ts</code> builds the plain text and a map from each character back to its position in the document, re-finds the original words before replacing them, and keeps bold, colours and links intact.</li>
+            </ul>
+          </div>
+          <div class="prose">
+            <h4>Rendering a post safely</h4>
+            <ul>
+              <li><code>PostBody</code> checks <code>content_format</code>. HTML goes through DOMPurify with the same allowlist the server uses; Markdown (older posts) goes through the Markdown renderer.</li>
+              <li>The server is the real safety line (nh3). The browser pass is a second line in case bad HTML was ever stored.</li>
+              <li>Cover images load from <code>/uploads</code>, which the proxy sends to the API.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+<!-- =============================== 04 BACKEND =============================== -->
+      <section class="chapter" id="backend">
+        <div class="chapter-head">
+          <p class="eyebrow">04 · Backend</p>
+          <h2>Backend architecture</h2>
+          <p>A layered FastAPI service. Each layer only calls the one below it: routes don't write SQL, and repositories don't know about HTTP. Outside services sit behind small interfaces, so they can be replaced or faked in tests.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Backend layers from HTTP middleware to routers, dependencies, services, repositories, models and PostgreSQL, with side columns for integrations and core.">
+          <div class="diagram-inner">
+            <div class="stack">
+              <div class="layers">
+                <div class="layer api"><div class="name"><b>Middleware</b><small>app/main.py</small></div>
+                  <small><code>RequestContextMiddleware</code> gives each request an id and writes a JSON access log · CORS · GZip for bodies of 1 KB or more · a global error handler that turns domain errors into <code>{"error": {code, message, request_id}}</code></small></div>
+                <div class="link down"><span>request</span></div>
+                <div class="layer api"><div class="name"><b>Routers</b><small>app/api/v1/routes</small></div>
+                  <div class="chips"><span class="chip">auth</span><span class="chip">posts</span><span class="chip">likes</span><span class="chip">comments</span><span class="chip">topics</span><span class="chip">users</span><span class="chip">me</span><span class="chip">writing</span><span class="chip">admin</span><span class="chip">health</span></div></div>
+                <div class="link down"><span>Depends(...)</span></div>
+                <div class="layer api"><div class="name"><b>Dependencies</b><small>app/api/deps.py</small></div>
+                  <small>A database session per request · <code>CurrentUser</code> (decodes the JWT, loads the user) · <code>require_permission(...)</code> · rate limiters <code>limit_login_attempts</code>, <code>limit_comments</code>, <code>limit_writing</code> · page parameters</small></div>
+                <div class="link down"><span>calls</span></div>
+                <div class="layer api"><div class="name"><b>Services</b><small>app/services</small></div>
+                  <small>The business rules: who may edit what, slug and excerpt rules, publishing, moderation before saving, audit entries in the same transaction, writing checks, CSV export.</small></div>
+                <div class="link down"><span>calls</span></div>
+                <div class="layer api"><div class="name"><b>Repositories</b><small>app/repositories</small></div>
+                  <small>All SQL lives here: listing and search, <code>trending()</code>, topic engagement, pagination, streaming in batches.</small></div>
+                <div class="link down"><span>SQLAlchemy 2 async ORM</span></div>
+                <div class="layer data"><div class="name"><b>Models → PostgreSQL</b><small>app/models · alembic</small></div>
+                  <small>User, Post, Topic, PostTopic, Like, Comment, AuditLog. The schema changes only through Alembic migrations (10 so far).</small></div>
+              </div>
+              <div class="side">
+                <div class="node ext"><b>integrations/</b><ul><li><code>grammar.py</code>: LanguageTool</li><li><code>llm.py</code>: <code>ChatModel</code> (Gemini or Groq) or <code>DisabledModel</code></li><li><code>moderation.py</code>: word list or HTTP API</li><li><code>storage.py</code>: <code>LocalStorage</code> (S3-ready)</li></ul></div>
+                <div class="node ops"><b>core/</b><ul><li><code>config</code>: settings from env</li><li><code>security</code>: Argon2, JWT</li><li><code>html</code>: nh3 allowlist</li><li><code>rate_limit</code>: sliding window</li><li><code>exceptions</code>, <code>logging</code>, <code>text</code></li><li><code>permissions.py</code>: RBAC table</li></ul></div>
+                <div class="node api"><b>Startup (lifespan)</b><ul><li>DB engine and sessionmaker</li><li>Two httpx2 clients: <code>http</code> (moderation) and <code>slow_http</code> (grammar, AI)</li><li>Puts the moderator, grammar checker, language model, storage and rate limiter on <code>app.state</code></li></ul></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="split">
+          <div class="prose">
+            <h4>The logic behind it</h4>
+            <ul>
+              <li><strong>Thin routes, testable rules.</strong> A route only parses input, runs its dependencies and calls a service. The rules live in services, where they're easy to test.</li>
+              <li><strong>Dependency injection.</strong> Login, permissions and rate limits are FastAPI dependencies, so a route shows at a glance what it requires, and tests can replace them.</li>
+              <li><strong>Interfaces for the outside world.</strong> Services depend on <code>GrammarChecker</code>, <code>LanguageModel</code>, <code>Moderator</code> and <code>Storage</code> protocols. The real classes are built once at startup, and tests use fakes, so the 263 tests never call the internet.</li>
+              <li><strong>Async all the way.</strong> The database driver (asyncpg) and the HTTP clients (httpx2) are async, and grammar runs LanguageTool and the AI in parallel on one worker.</li>
+            </ul>
+          </div>
+          <div class="prose">
+            <h4>API surface (<code>/api/v1</code>)</h4>
+            <div class="scroll">
+              <table>
+                <thead><tr><th>Area</th><th>Endpoints</th></tr></thead>
+                <tbody>
+                  <tr><td>Auth</td><td><code>POST /auth/register</code>, <code>/auth/login</code></td></tr>
+                  <tr><td>Posts</td><td><code>GET /posts</code>, <code>/posts/trending</code>, <code>/posts/{slug}</code>; <code>POST</code> · <code>PATCH</code> · <code>DELETE</code>; <code>/publish</code>, <code>/unpublish</code>, <code>/cover</code></td></tr>
+                  <tr><td>Community</td><td><code>PUT</code>/<code>DELETE /posts/{id}/like</code>; <code>GET</code>/<code>POST /posts/{id}/comments</code>; <code>DELETE /comments/{id}</code></td></tr>
+                  <tr><td>Discovery</td><td><code>GET /topics</code>, <code>/topics/trending</code>, <code>/topics/{slug}</code>, <code>/users/{username}</code></td></tr>
+                  <tr><td>Me</td><td><code>GET /users/me</code>, <code>/me/posts</code>, <code>/me/posts/export</code></td></tr>
+                  <tr><td>Writing</td><td><code>GET /writing/status</code>; <code>POST /writing/grammar</code>, <code>/tone</code>, <code>/simplify</code></td></tr>
+                  <tr><td>Admin</td><td><code>GET /admin/users</code>, <code>PATCH /admin/users/{id}/role</code>, <code>GET /admin/audit-logs</code></td></tr>
+                  <tr><td>Health</td><td><code>GET /health</code> (process up), <code>/ready</code> (database reachable)</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+<!-- =============================== 05 DATABASE =============================== -->
+      <section class="chapter" id="database">
+        <div class="chapter-head">
+          <p class="eyebrow">05 · Database</p>
+          <h2>Database architecture</h2>
+          <p>PostgreSQL 16 holds all the data. Posts sit at the centre: users write them, topics group them, and likes, comments and audit entries point to them. Counts, search vectors and trending are computed by the database rather than kept up to date by hand.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Entity diagram of users, posts, topics, post_topics, likes, comments and audit_logs.">
+          <div class="er">
+            <div class="entity"><header><b>users</b><small>accounts</small></header><ul>
+              <li><span>id <span class="key">PK</span></span><em>uuid</em></li>
+              <li><span>email <span class="key">UQ</span></span><em>text</em></li>
+              <li><span>username <span class="key">UQ lower()</span></span><em>text</em></li>
+              <li><span>hashed_password</span><em>argon2</em></li>
+              <li><span>role</span><em>user | admin</em></li>
+              <li><span>is_active</span><em>bool</em></li>
+              <li><span>created_at, updated_at</span><em>tstz</em></li>
+            </ul></div>
+            <div class="entity" style="grid-row: span 2"><header><b>posts</b><small>the core</small></header><ul>
+              <li><span>id <span class="key">PK</span></span><em>uuid</em></li>
+              <li><span>author_id <span class="key fk">FK users</span></span><em>uuid · idx</em></li>
+              <li><span>title</span><em>text</em></li>
+              <li><span>slug <span class="key">UQ</span></span><em>text</em></li>
+              <li><span>content</span><em>text</em></li>
+              <li><span>content_format</span><em>html | markdown</em></li>
+              <li><span>excerpt</span><em>text</em></li>
+              <li><span>status</span><em>draft | published</em></li>
+              <li><span>cover_image</span><em>text?</em></li>
+              <li><span>published_at</span><em>tstz?</em></li>
+              <li><span>created_at, updated_at</span><em>tstz</em></li>
+              <li><span>deleted_at</span><em>soft delete</em></li>
+              <li><span>search_vector <span class="key gen">GENERATED</span></span><em>tsvector · GIN</em></li>
+              <li><span>like_count <span class="key gen">SUBQUERY</span></span><em>not stored</em></li>
+              <li><span>comment_count <span class="key gen">SUBQUERY</span></span><em>not stored</em></li>
+            </ul></div>
+            <div class="entity"><header><b>topics</b><small>curated</small></header><ul>
+              <li><span>slug <span class="key">PK</span></span><em>varchar(40)</em></li>
+              <li><span>name</span><em>text</em></li>
+              <li><span>description</span><em>text</em></li>
+              <li><span>position</span><em>int · sort order</em></li>
+            </ul></div>
+            <div class="entity"><header><b>likes</b><small>who liked what</small></header><ul>
+              <li><span>user_id <span class="key">PK</span><span class="key fk">FK</span></span><em>uuid</em></li>
+              <li><span>post_id <span class="key">PK</span><span class="key fk">FK</span></span><em>uuid</em></li>
+              <li><span>created_at</span><em>tstz · trending</em></li>
+            </ul></div>
+            <div class="entity"><header><b>post_topics</b><small>max 3 per post</small></header><ul>
+              <li><span>post_id <span class="key">PK</span><span class="key fk">FK</span></span><em>cascade</em></li>
+              <li><span>topic_slug <span class="key">PK</span><span class="key fk">FK</span></span><em>cascade · idx</em></li>
+            </ul></div>
+            <div class="entity"><header><b>comments</b><small>moderated</small></header><ul>
+              <li><span>id <span class="key">PK</span></span><em>uuid</em></li>
+              <li><span>post_id <span class="key fk">FK posts</span></span><em>uuid</em></li>
+              <li><span>author_id <span class="key fk">FK users</span></span><em>uuid</em></li>
+              <li><span>content</span><em>text</em></li>
+              <li><span>created_at, updated_at</span><em>tstz</em></li>
+              <li><span>deleted_at</span><em>soft delete</em></li>
+            </ul></div>
+            <div class="entity"><header><b>audit_logs</b><small>append-only</small></header><ul>
+              <li><span>id <span class="key">PK</span></span><em>bigint identity</em></li>
+              <li><span>actor_id <span class="key fk">FK users</span></span><em>SET NULL</em></li>
+              <li><span>action</span><em>e.g. post.deleted</em></li>
+              <li><span>entity_type, entity_id</span><em>text</em></li>
+              <li><span>details</span><em>jsonb</em></li>
+              <li><span>created_at</span><em>tstz</em></li>
+            </ul></div>
+            <div class="entity" style="border-style:dashed"><header><b>indexes</b><small>for the hot queries</small></header><ul>
+              <li><span>ix_posts_status_published_at</span><em>feed</em></li>
+              <li><span>GIN (search_vector)</span><em>search</em></li>
+              <li><span>posts (author_id)</span><em>profiles</em></li>
+              <li><span>comments (post_id, created_at)</span><em>threads</em></li>
+              <li><span>post_topics (topic_slug)</span><em>topic pages</em></li>
+              <li><span>unique lower(username)</span><em>login</em></li>
+            </ul></div>
+          </div>
+        </div>
+
+        <div class="rels">
+          <div class="rel"><b>users 1 ── * posts</b><br>one author writes many posts</div>
+          <div class="rel"><b>posts * ── * topics</b><br>through post_topics, up to 3 each</div>
+          <div class="rel"><b>users * ── * posts</b><br>through likes, one like per pair</div>
+          <div class="rel"><b>posts 1 ── * comments</b><br>each written by one user</div>
+          <div class="rel"><b>users 1 ── * audit_logs</b><br>actor kept as NULL if the user is removed</div>
+        </div>
+
+        <div class="split">
+          <div class="prose">
+            <h4>The logic behind it</h4>
+            <ul>
+              <li><strong>Computed, not duplicated.</strong> <code>like_count</code> and <code>comment_count</code> are subqueries that run with the query, not stored columns. They can never drift out of sync, and trending needs the timestamped rows anyway.</li>
+              <li><strong>A search vector the database keeps up to date.</strong> <code>search_vector</code> is a generated, stored column. Postgres rebuilds it whenever the title or content changes, so application code can't forget to.</li>
+              <li><strong>Soft deletes</strong> for posts and comments (<code>deleted_at</code>). Deleted content disappears everywhere but stays recoverable, and audit entries still point to something.</li>
+              <li><strong>Composite primary keys</strong> on <code>likes</code> and <code>post_topics</code> enforce the rules (“one like per person”) in the database itself.</li>
+            </ul>
+          </div>
+          <div class="prose">
+            <h4>Migrations and data</h4>
+            <ul>
+              <li>Every schema change is an Alembic migration. The API container runs <code>alembic upgrade head</code> on start, and CI runs <code>alembic check</code> to catch model changes that have no migration.</li>
+              <li>The 14 topics are added by a migration, so every environment has the same list.</li>
+              <li><code>python -m app.seed</code> adds 10 sample authors and 35 posts, with likes and comments.</li>
+              <li>Tests run against a separate test database, never the dev data.</li>
+              <li>Cover images live in a separate <code>uploads</code> volume. The database stores only their path.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <p class="eyebrow">The trending query in SQL (simplified)</p>
+<pre class="code"><span class="k">SELECT</span> p.*
+<span class="k">FROM</span> posts p
+<span class="k">WHERE</span> p.status = <span class="k">'published'</span> <span class="k">AND</span> p.deleted_at <span class="k">IS NULL</span>
+<span class="k">ORDER BY</span>
+  (<span class="k">SELECT</span> count(*) <span class="k">FROM</span> likes l    <span class="k">WHERE</span> l.post_id = p.id <span class="k">AND</span> l.created_at &gt;= :since)
++ (<span class="k">SELECT</span> count(*) <span class="k">FROM</span> comments c <span class="k">WHERE</span> c.post_id = p.id <span class="k">AND</span> c.created_at &gt;= :since
+                                    <span class="k">AND</span> c.deleted_at <span class="k">IS NULL</span>)  <span class="k">DESC</span>,
+  p.like_count + p.comment_count  <span class="k">DESC</span>,   <span class="c">-- all-time tie-breaker</span>
+  p.published_at <span class="k">DESC</span>, p.id
+<span class="k">LIMIT</span> :limit;                              <span class="c">-- :since = now() - 7 days</span></pre>
+        </div>
+      </section>
+
+<!-- =============================== 06 FLOWS =============================== -->
+      <section class="chapter" id="flows">
+        <div class="chapter-head">
+          <p class="eyebrow">06 · Interactions</p>
+          <h2>How the parts work together</h2>
+          <p>Four common journeys, step by step. The coloured label shows where each step runs.</p>
+        </div>
+
+        <div class="flows">
+          <div class="card">
+            <h3>A. Logging in and making a request</h3>
+            <div class="flow">
+              <div class="step"><span class="lane web">Browser</span><p>The login form sends <code>POST /auth/login</code> with the email or username and the password.</p></div>
+              <div class="step"><span class="lane api">API · deps</span><p><code>limit_login_attempts</code> allows 5 tries a minute per IP address and username.</p></div>
+              <div class="step"><span class="lane data">Postgres</span><p>The user is looked up (username is case-insensitive).</p></div>
+              <div class="step"><span class="lane api">API · core</span><p>Argon2 checks the password, then a JWT (HS256, valid 30 minutes) is signed with the user id.</p></div>
+              <div class="step"><span class="lane web">Browser</span><p><code>client.ts</code> saves the token in localStorage and adds <code>Authorization: Bearer …</code> to later calls.</p></div>
+              <div class="step"><span class="lane api">API · deps</span><p>On every protected call, <code>CurrentUser</code> checks the token, loads the user and their <em>current</em> role, and <code>require_permission</code> allows or rejects the request with 403.</p></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>B. Publishing a post</h3>
+            <div class="flow">
+              <div class="step"><span class="lane web">Browser</span><p>The writer saves the draft: <code>POST /posts</code> (then <code>PATCH</code>) with the editor's HTML, title and topics.</p></div>
+              <div class="step"><span class="lane api">API · service</span><p>The HTML is cleaned with nh3, the slug is built from the title (unique), the excerpt is generated, and topics are checked (at most 3, all real).</p></div>
+              <div class="step"><span class="lane data">Postgres</span><p>The post and its <code>post_topics</code> rows are saved, and <code>search_vector</code> is generated automatically.</p></div>
+              <div class="step"><span class="lane web">Browser</span><p>The writer clicks Publish: <code>POST /posts/{id}/publish</code>.</p></div>
+              <div class="step"><span class="lane api">API · service</span><p>Checks ownership (or admin), sets <code>status=published</code> and <code>published_at</code>, freezes the slug, and writes the audit entry <code>post.published</code>, all in one transaction.</p></div>
+              <div class="step"><span class="lane web">Browser</span><p>TanStack Query marks the post lists as stale, so the feed, profile and topic pages show the new post.</p></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>C. A grammar check</h3>
+            <div class="flow">
+              <div class="step"><span class="lane web">Browser</span><p><code>editorText.readDoc</code> turns the document into plain text and sends <code>POST /writing/grammar</code>.</p></div>
+              <div class="step"><span class="lane api">API · deps</span><p>Login required, <code>limit_writing</code> (10 a minute), and the text must be at most 20,000 characters.</p></div>
+              <div class="step"><span class="lane ext">External</span><p>LanguageTool and the AI (Gemini, falling back as needed) are called <em>in parallel</em>.</p></div>
+              <div class="step"><span class="lane api">API · service</span><p>Word issues are mapped to categories. AI sentence fixes are kept only if their original text is found in the post (up to 40). If one source failed, a note is added.</p></div>
+              <div class="step"><span class="lane web">Browser</span><p>Cards are grouped and overlapping word issues are hidden. Accept runs <code>replaceTarget</code>, which finds the words again and edits the document while keeping its formatting. It can be undone.</p></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>D. Loading the home page</h3>
+            <div class="flow">
+              <div class="step"><span class="lane web">Browser</span><p><code>HomePage</code> and <code>Layout</code> start three queries in parallel: the feed, <code>/posts/trending?limit=5</code> and <code>/topics/trending?limit=3</code>, plus <code>/topics</code>.</p></div>
+              <div class="step"><span class="lane api">API · repo</span><p>The feed uses the <code>status, published_at</code> index. Trending runs the ranking queries with <code>since = now − 7 days</code>.</p></div>
+              <div class="step"><span class="lane data">Postgres</span><p>Counts come from subqueries; nothing is precomputed or cached on the server.</p></div>
+              <div class="step"><span class="lane api">API · middleware</span><p>Large JSON answers are gzipped, and every response carries its request id.</p></div>
+              <div class="step"><span class="lane web">Browser</span><p>Results are cached: topic lists for 5 minutes, so moving between pages doesn't reload the sidebar.</p></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+<!-- =============================== 07 SECURITY =============================== -->
+      <section class="chapter" id="security">
+        <div class="chapter-head">
+          <p class="eyebrow">07 · Security &amp; operations</p>
+          <h2>Security, limits and operations</h2>
+        </div>
+
+        <div class="split">
+          <div class="prose">
+            <h4>Who can do what (RBAC)</h4>
+            <div class="scroll">
+              <table>
+                <thead><tr><th>Action</th><th>Guest</th><th>User</th><th>Admin</th></tr></thead>
+                <tbody>
+                  <tr><td>Read published posts, search, topics</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                  <tr><td>Write, edit and publish own posts</td><td>–</td><td>✓</td><td>✓</td></tr>
+                  <tr><td>Like, comment, writing checks, export</td><td>–</td><td>✓</td><td>✓</td></tr>
+                  <tr><td>Delete own comments</td><td>–</td><td>✓</td><td>✓</td></tr>
+                  <tr><td>Edit, unpublish or delete anyone's post</td><td>–</td><td>–</td><td>✓</td></tr>
+                  <tr><td>Delete any comment</td><td>–</td><td>–</td><td>✓</td></tr>
+                  <tr><td>Change roles, read the audit log</td><td>–</td><td>–</td><td>✓</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="prose">
+            <h4>Rate limits</h4>
+            <div class="scroll">
+              <table>
+                <thead><tr><th>What</th><th class="num">Limit</th><th>Counted per</th></tr></thead>
+                <tbody>
+                  <tr><td>Login attempts</td><td class="num">5 / min</td><td>IP address + username</td></tr>
+                  <tr><td>Comments</td><td class="num">10 / min</td><td>user</td></tr>
+                  <tr><td>Writing checks</td><td class="num">10 / min</td><td>user</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="caption">A sliding window kept in memory (a deque of timestamps per key, cleaned up every 1,000 calls). It's simple and fast for one API container. With several containers it would move to Redis.</p>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="logic">
+            <p class="eyebrow">Protecting data</p>
+            <ul>
+              <li>Argon2 password hashing</li>
+              <li>Short-lived JWTs, with the role re-checked from the database on every request</li>
+              <li>HTML allowlists on the server (nh3) and in the browser (DOMPurify)</li>
+              <li>Upload checks on the real file bytes, with random filenames</li>
+              <li>Formula-safe CSV export</li>
+              <li>Secrets only in <code>.env</code>, which git ignores</li>
+            </ul>
+          </div>
+          <div class="logic">
+            <p class="eyebrow">Failing gracefully</p>
+            <ul>
+              <li>One error shape: <code>{error: {code, message, request_id}}</code></li>
+              <li>Timeouts and retries on every outside call</li>
+              <li>AI fallback model when the first is busy or out of quota</li>
+              <li>Moderation API down → the comment is accepted and a warning logged</li>
+              <li>Grammar still works if the AI is down, and the reverse</li>
+            </ul>
+          </div>
+          <div class="logic">
+            <p class="eyebrow">Running it</p>
+            <ul>
+              <li>structlog JSON logs with a request id on every line</li>
+              <li><code>/health</code> (the process is up) and <code>/ready</code> (the database answers), used by the Docker healthcheck</li>
+              <li>Migrations run automatically on start</li>
+              <li>CI checks lint, format, migrations, tests, types and both builds on every change</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+<!-- =============================== 08 DECISIONS =============================== -->
+      <section class="chapter" id="decisions">
+        <div class="chapter-head">
+          <p class="eyebrow">08 · Why it's built this way</p>
+          <h2>Key decisions</h2>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Decision</th><th>Why</th><th>Trade-off</th></tr></thead>
+            <tbody>
+              <tr><td>A single-page app plus a JSON API</td><td>A clean split: the API could also serve a mobile app, and each side is tested on its own</td><td>Needs client-side routing and no server rendering (less SEO out of the box)</td></tr>
+              <tr><td>Postgres full-text search</td><td>No extra search server to run; the index stays up to date by itself</td><td>Fewer features than Elasticsearch (no typo tolerance)</td></tr>
+              <tr><td>Trending computed live over 7 days</td><td>Always correct, nothing to schedule, easy to explain</td><td>At large scale it would move to a cached or precomputed score</td></tr>
+              <tr><td>Stateless JWT, role read from the database</td><td>No session store; demotions work at once</td><td>One user lookup per request (by primary key, so fast)</td></tr>
+              <tr><td>Rich text stored as cleaned HTML</td><td>What you see in the editor is what readers get</td><td>It needs an allowlist on both sides</td></tr>
+              <tr><td>AI behind a <code>LanguageModel</code> interface</td><td>Swap Gemini or Groq by setting a key; tests use a fake</td><td>Only features that work with any chat model can be used</td></tr>
+              <tr><td>Readability worked out in the browser</td><td>Instant, free and private; it works without AI</td><td>The syllable count is a heuristic for English</td></tr>
+              <tr><td>An audit entry in the same transaction</td><td>The log can never disagree with the data</td><td>Every admin write is slightly larger</td></tr>
+              <tr><td>Rate limits in memory</td><td>No Redis needed for one container</td><td>Counters reset on restart and aren't shared between containers</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <footer class="end">Lumen · repository <code>shreyansh-asopa/blog-platform</code> · written from the code as of commit <code>a0a34e0</code>. Numbers in the trending example are illustrative; every limit and window matches the source.</footer>
+      </section>
+    </main>
+  </div>
+</div>
+</body>
+</html>

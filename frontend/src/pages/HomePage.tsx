@@ -7,10 +7,11 @@ import { ErrorMessage } from '../components/ErrorMessage'
 import { Hero } from '../components/Hero'
 import { Pagination } from '../components/Pagination'
 import { PostCard } from '../components/PostCard'
+import { TrendingPosts } from '../components/TrendingPosts'
 import { plural } from '../lib/format'
 import styles from './HomePage.module.css'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 5
 
 export function HomePage() {
   const { user, loading } = useAuth()
@@ -35,40 +36,45 @@ export function HomePage() {
       {/* Visitors get the welcome block first; members go straight to reading */}
       {!loading && !user && page === 1 && <Hero />}
 
-      <section className={styles.feed} aria-labelledby="feed-title">
-        <header className={styles.feedHeader}>
-          <h2 id="feed-title">Latest posts</h2>
-          {feed.data && (
-            <span className="muted">
-              <span className={styles.dot} aria-hidden />
-              {plural(feed.data.total, 'article')}
-            </span>
-          )}
-        </header>
+      {/* Two parts: the newest posts a page at a time, and this week's most active beside them */}
+      <div className={styles.feed}>
+        <section aria-labelledby="feed-title">
+          <header className={styles.feedHeader}>
+            <h2 id="feed-title">Latest posts</h2>
+            {feed.data && (
+              <span className="muted">
+                <span className={styles.dot} aria-hidden />
+                {plural(feed.data.total, 'article')}
+              </span>
+            )}
+          </header>
 
-        {feed.isPending && <p className="muted">Loading posts…</p>}
-        {feed.isError && <ErrorMessage error={feed.error} />}
-        {feed.data?.items.length === 0 && (
-          <div className={`card ${styles.empty}`}>
-            <p>
-              {page > 1 ? 'No posts on this page.' : 'No posts yet. Be the first to write one!'}
-            </p>
+          {feed.isPending && <p className="muted">Loading posts…</p>}
+          {feed.isError && <ErrorMessage error={feed.error} />}
+          {feed.data?.items.length === 0 && (
+            <div className={`card ${styles.empty}`}>
+              <p>
+                {page > 1 ? 'No posts on this page.' : 'No posts yet. Be the first to write one!'}
+              </p>
+            </div>
+          )}
+          <div className={styles.list} aria-busy={feed.isPlaceholderData}>
+            {feed.data?.items.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
           </div>
-        )}
-        <div className={styles.list} aria-busy={feed.isPlaceholderData}>
-          {feed.data?.items.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
-        </div>
-        {feed.data && (
-          <Pagination
-            page={page}
-            size={PAGE_SIZE}
-            total={feed.data.total}
-            href={(n) => (n === 1 ? '/' : `/?page=${n}`)}
-          />
-        )}
-      </section>
+          {feed.data && (
+            <Pagination
+              page={page}
+              size={PAGE_SIZE}
+              total={feed.data.total}
+              href={(n) => (n === 1 ? '/' : `/?page=${n}`)}
+            />
+          )}
+        </section>
+
+        <TrendingPosts />
+      </div>
     </div>
   )
 }
