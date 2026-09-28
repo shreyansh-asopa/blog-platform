@@ -148,7 +148,7 @@ each one). Only two are required:
 |---|---|---|
 | `POSTGRES_PASSWORD` | Yes | Password for the local database |
 | `JWT_SECRET` | Yes | Signs login tokens; at least 32 characters (`openssl rand -hex 32`) |
-| `GEMINI_API_KEY` / `GROQ_API_KEY` | No | Turns on AI sentence fixes, Tone and "Simplify with AI". Gemini is used if both are set |
+| `GEMINI_API_KEY` / `GROQ_API_KEY` | No | Turns on AI sentence fixes, Tone and "Simplify with AI". Gemini is used first; with both set, Groq takes over when Gemini is busy or out of quota |
 | `MODERATION_API_URL` | No | Send comments to your own moderation API instead of the built-in word list |
 | `POSTGRES_PORT`, `API_PORT` | No | Change if 5432 or 8000 is already in use |
 | `CORS_ORIGINS`, `*_PER_MINUTE`, `LOG_FORMAT` | No | Allowed browser origins, rate limits, log style |

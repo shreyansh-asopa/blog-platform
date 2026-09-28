@@ -67,8 +67,8 @@ class Settings(BaseSettings):
     gemini_fallback_model: str | None = "gemini-flash-latest"
     groq_api_key: str | None = None
     groq_url: str = "https://api.groq.com/openai/v1"
-    groq_model: str = "llama-3.3-70b-versatile"
-    groq_fallback_model: str | None = "llama-3.1-8b-instant"
+    groq_model: str = "openai/gpt-oss-120b"
+    groq_fallback_model: str | None = "openai/gpt-oss-20b"
     writing_timeout_seconds: float = 30.0
     writing_retries: int = 1
     # LanguageTool's free API takes up to 20 KB per check

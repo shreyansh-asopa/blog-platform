@@ -16,6 +16,7 @@ from app.integrations.grammar import GrammarIssue, GrammarUnavailableError, Lang
 from app.integrations.llm import (
     ChatModel,
     DisabledModel,
+    FallbackModel,
     ModelUnavailableError,
     create_language_model,
 )
@@ -146,26 +147,78 @@ async def test_ai_asks_for_json_with_the_key():
 )
 async def test_ai_errors_become_friendly_messages(response, message):
     client, _ = recording(lambda r: response)
-    model = ChatModel(client, AI_URL, provider="groq", api_key="k", model="m")
+    model = ChatModel(client, AI_URL, provider="groq", api_key="k", model="m", backoff_seconds=0)
 
     with pytest.raises(ModelUnavailableError, match=message):
         await model.complete_json("s", "p")
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("status", [404, 429, 503])
-async def test_ai_tries_the_fallback_model_when_the_first_cant_answer(status):
+@pytest.mark.parametrize(
+    ("status", "asked"),
+    [(404, ["main", "spare"]), (429, ["main", "spare"]), (503, ["main"] * 3 + ["spare"])],
+)
+async def test_ai_tries_the_fallback_model_when_the_first_cant_answer(status, asked):
     def answer(request: httpx2.Request) -> httpx2.Response:
         first = json.loads(request.read())["model"] == "main"
         return httpx2.Response(status) if first else ai_answer({"fix": "Short."})
 
     client, seen = recording(answer)
     model = ChatModel(
+        client,
+        AI_URL,
+        provider="gemini",
+        api_key="k",
+        model="main",
+        fallback="spare",
+        backoff_seconds=0,
+    )
+
+    assert await model.complete_json("s", "p") == {"fix": "Short."}
+    assert [json.loads(r.read())["model"] for r in seen] == asked
+
+
+@pytest.mark.anyio
+async def test_ai_asks_a_busy_model_again():
+    statuses = iter([503, 502, 200])
+    client, seen = recording(
+        lambda r: (
+            (s := next(statuses)) == 200 and ai_answer({"fix": "Short."}) or httpx2.Response(s)
+        )
+    )
+    model = ChatModel(
+        client, AI_URL, provider="gemini", api_key="k", model="main", backoff_seconds=0
+    )
+
+    assert await model.complete_json("s", "p") == {"fix": "Short."}
+    assert len(seen) == 3
+
+
+@pytest.mark.anyio
+async def test_ai_tries_the_fallback_model_when_the_first_cant_be_reached():
+    def answer(request: httpx2.Request) -> httpx2.Response:
+        if json.loads(request.read())["model"] == "main":
+            raise httpx2.ConnectError("no route")
+        return ai_answer({"fix": "Short."})
+
+    client, _ = recording(answer)
+    model = ChatModel(
         client, AI_URL, provider="gemini", api_key="k", model="main", fallback="spare"
     )
 
     assert await model.complete_json("s", "p") == {"fix": "Short."}
-    assert [json.loads(r.read())["model"] for r in seen] == ["main", "spare"]
+
+
+@pytest.mark.anyio
+async def test_ai_says_so_when_it_cant_be_reached():
+    def answer(request: httpx2.Request) -> httpx2.Response:
+        raise httpx2.ConnectError("no route")
+
+    client, _ = recording(answer)
+    model = ChatModel(client, AI_URL, provider="gemini", api_key="k", model="m")
+
+    with pytest.raises(ModelUnavailableError, match="Couldn't reach"):
+        await model.complete_json("s", "p")
 
 
 @pytest.mark.anyio
@@ -182,15 +235,21 @@ async def test_ai_does_not_try_the_fallback_with_a_bad_key():
 
 @pytest.mark.anyio
 async def test_ai_reports_the_last_error_when_both_models_fail():
-    statuses = iter([503, 429])
+    statuses = iter([503, 503, 503, 429])
     client, seen = recording(lambda r: httpx2.Response(next(statuses)))
     model = ChatModel(
-        client, AI_URL, provider="gemini", api_key="k", model="main", fallback="spare"
+        client,
+        AI_URL,
+        provider="gemini",
+        api_key="k",
+        model="main",
+        fallback="spare",
+        backoff_seconds=0,
     )
 
     with pytest.raises(ModelUnavailableError, match="free limit is used up"):
         await model.complete_json("s", "p")
-    assert len(seen) == 2
+    assert len(seen) == 4
 
 
 @pytest.mark.anyio
@@ -215,6 +274,27 @@ def test_gemini_is_used_first_then_groq(keys, provider):
     model = create_language_model(settings, httpx2.AsyncClient())
 
     assert model.provider == provider
+
+
+@pytest.mark.anyio
+async def test_groq_answers_when_gemini_cant():
+    @dataclass
+    class Fixed:
+        provider: str
+        answer: Any
+
+        async def complete_json(self, system: str, prompt: str) -> Any:
+            if self.answer is None:
+                raise ModelUnavailableError("busy")
+            return self.answer
+
+    model = FallbackModel([Fixed("gemini", None), Fixed("groq", {"fix": "Short."})])
+
+    assert model.provider == "gemini"
+    assert await model.complete_json("s", "p") == {"fix": "Short."}
+
+    with pytest.raises(ModelUnavailableError, match="busy"):
+        await FallbackModel([Fixed("gemini", None), Fixed("groq", None)]).complete_json("s", "p")
 
 
 # --- API ---
@@ -398,7 +478,7 @@ def test_empty_text_is_invalid(client: TestClient, ada):
 
 
 def test_checks_are_rate_limited(client: TestClient, ada):
-    use(client, checker=FakeChecker())
+    use(client, checker=FakeChecker(), model=FakeModel({"suggestions": []}))
 
     codes = [
         client.post("/api/v1/writing/grammar", json={"text": "hi"}, headers=ada.headers)

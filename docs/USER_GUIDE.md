@@ -78,7 +78,7 @@ AI parts (whole-sentence fixes, Tone, and "Simplify with AI") need one free key:
   `GEMINI_API_KEY=your-key` to `.env`, or
 - Groq: create a key at https://console.groq.com/keys and add `GROQ_API_KEY=your-key`.
 
-If both are set, Gemini is used. You can add a key later; see
+If both are set, Gemini is used first and Groq takes over when Gemini is busy or out of quota. You can add a key later; see
 [Turning on AI later](#turning-on-ai-later).
 
 ## 4. Start Lumen

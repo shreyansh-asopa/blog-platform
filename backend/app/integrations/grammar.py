@@ -5,12 +5,15 @@ Services depend only on the `GrammarChecker` interface. The real one is Language
 """
 
 import asyncio
+import logging
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
 import httpx2
 
 from app.core.config import Settings
+
+logger = logging.getLogger(__name__)
 
 Category = Literal["spelling", "grammar", "punctuation", "style"]
 
@@ -68,6 +71,7 @@ class LanguageToolChecker:
                     return self._parse(response)
                 error = GrammarUnavailableError(f"LanguageTool said {response.status_code}")
 
+            logger.warning("LanguageTool attempt %s failed: %r", attempt + 1, error)
             if attempt < self._retries:
                 await asyncio.sleep(self._backoff * 2**attempt)
 
@@ -79,6 +83,7 @@ class LanguageToolChecker:
             response.raise_for_status()
             return [cls._issue(match) for match in response.json()["matches"]]
         except (httpx2.HTTPStatusError, ValueError, KeyError, TypeError, AttributeError) as exc:
+            logger.warning("LanguageTool answered %s: %r", response.status_code, exc)
             raise GrammarUnavailableError(f"unusable LanguageTool response: {exc}") from exc
 
     @classmethod
